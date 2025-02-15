@@ -4,19 +4,18 @@ import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.text
-import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.logging.LogLevel
-import java.util.Properties
+import java.util.*
 
-fun runEchoBot(properties: Properties): Bot {
-    val bot = bot {
-        token = properties.getProperty("BOT_API_KEY")
+class EchoBot(properties: Properties): TgBot {
+    private val bot = bot {
+        token = properties.getProperty(BOT_API_KEY)
         logLevel = LogLevel.Network.Body
 
         dispatch {
             text {
                 bot.sendMessage(
-                    chatId = ChatId.fromId(message.chat.id),
+                    chatId = com.github.kotlintelegrambot.entities.ChatId.Companion.fromId(message.chat.id),
                     messageThreadId = message.messageThreadId,
                     text = text,
                     protectContent = true,
@@ -26,5 +25,13 @@ fun runEchoBot(properties: Properties): Bot {
         }
     }
 
-    return bot
+    override fun getBot(): Bot {
+        bot.startPolling()
+        return bot
+    }
+
+    override fun close() {
+        bot.stopPolling()
+        bot.close()
+    }
 }
