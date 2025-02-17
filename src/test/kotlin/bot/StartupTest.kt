@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class StartupTest {
-
     @Test
     fun testLoadProperties() {
         // TODO: pass a path to testable properties here?
