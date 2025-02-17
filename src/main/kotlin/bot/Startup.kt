@@ -5,6 +5,8 @@ import java.util.Properties
 
 fun loadProperties(): Properties {
     val properties = Properties()
-    properties.load(File("./src/main/resources/project.properties").inputStream())
+    // TODO: make path configurable (e.g. for test properties) as input parameter
+    val path = "./src/main/resources/project.properties"
+    properties.load(File(path).inputStream())
     return properties
 }

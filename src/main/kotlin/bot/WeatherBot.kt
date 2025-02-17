@@ -1,5 +1,8 @@
 package com.dsidak.bot
 
+import com.dsidak.openmeteo.Fetcher
+import com.dsidak.openmeteo.RequestContext
+import com.dsidak.openmeteo.RequestType
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
@@ -10,11 +13,12 @@ import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import com.github.kotlintelegrambot.logging.LogLevel
+import java.time.MonthDay
 import java.util.*
 
-class WeatherBot(properties: Properties): TgBot {
+class WeatherBot(private val properties: Properties): TgBot {
     private val bot = bot {
-        this.token = properties.getProperty(BOT_API_KEY)
+        this.token = properties.getProperty(BotProperties.BOT_API_KEY)
         this.logLevel = LogLevel.Network.Body
 
         this.dispatch {
@@ -80,9 +84,20 @@ class WeatherBot(properties: Properties): TgBot {
         val day = args[0]
         val result = bot.sendMessage(chatId = ChatId.fromId(update.message!!.chat.id), text = "Oh yeah, $day")
 
+        // TODO: properly handle the 'day' argument. Define allowed values
+        val ctx = RequestContext(
+            52.52,
+            13.41,
+            MonthDay.parse(day),
+            properties.getProperty(BotProperties.WEATHER_API_URL)
+        )
+        val fetcher = Fetcher(RequestType.FORECAST, ctx)
+        // TODO: coroutine? Potentially long operation
+        val answer = fetcher.fetch()
+
         result.fold(
             {
-                // do something here with the response
+                bot.sendMessage(chatId = ChatId.fromId(update.message!!.chat.id), text = answer)
             },
             {
                 // do something with the error
