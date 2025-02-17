@@ -9,7 +9,7 @@ import java.util.*
 
 class EchoBot(properties: Properties): TgBot {
     private val bot = bot {
-        token = properties.getProperty(BOT_API_KEY)
+        token = properties.getProperty(BotProperties.BOT_API_KEY)
         logLevel = LogLevel.Network.Body
 
         dispatch {
