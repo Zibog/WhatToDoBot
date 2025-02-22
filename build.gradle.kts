@@ -10,6 +10,8 @@ val kotlinLogging: String by project
 val logback: String by project
 val mockito: String by project
 
+val mockitoAgent = configurations.create("mockitoAgent")
+
 repositories {
     mavenCentral()
 }
@@ -28,8 +30,10 @@ dependencies {
     testImplementation(kotlin("test"))
     // https://mvnrepository.com/artifact/org.mockito/mockito-core
     testImplementation("org.mockito:mockito-core:$mockito")
+    mockitoAgent("org.mockito:mockito-core:$mockito") { isTransitive = false }
 }
 
 tasks.test {
     useJUnitPlatform()
+    jvmArgs("-javaagent:${mockitoAgent.asPath}")
 }
