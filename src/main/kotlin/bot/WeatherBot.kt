@@ -1,15 +1,19 @@
 package com.dsidak.bot
 
+import com.dsidak.bot.BotProperties.LOWER_BOUND
+import com.dsidak.bot.BotProperties.UPPER_BOUND
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
 import org.telegram.telegrambots.abilitybots.api.objects.Ability
 import org.telegram.telegrambots.abilitybots.api.objects.Locality
 import org.telegram.telegrambots.abilitybots.api.objects.Privacy
 import org.telegram.telegrambots.abilitybots.api.sender.SilentSender
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import java.time.Instant
-import java.time.ZoneId
+import java.time.LocalDate
 
 class WeatherBot(telegramClient: TelegramClient, botUsername: String) : AbilityBot(telegramClient, botUsername) {
+    private val log = KotlinLogging.logger {}
+
     override fun creatorId(): Long {
         return BotProperties.BOT_CREATOR_ID
     }
@@ -39,26 +43,29 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String) : AbilityB
             .input(1)
             .action { ctx ->
                 val inputArg = ctx.arguments()[0]
-                silent.send(inputArg, ctx.chatId())
-                val offset = argToDayOffset(inputArg)
-                silent.send(Instant.now().atZone(ZoneId.systemDefault()).plusDays(offset).toString(), ctx.chatId())
+                log.debug { "Going to parse arg=$inputArg" }
+                val dateWithOffset = offsetDate(LocalDate.now(), inputArg)
+                silent.send(dateWithOffset.toString(), ctx.chatId())
+                log.debug { "Check the weather for $dateWithOffset" }
             }
         return builder.build()
     }
 
-    private fun argToDayOffset(arg: String): Long {
-        if (arg.equals("today", ignoreCase = true)) {
-            return 0
-        }
-        if (arg.equals("tomorrow", ignoreCase = true)) {
-            return 1
-        }
+    companion object {
+        internal fun offsetDate(date: LocalDate, arg: String): LocalDate {
+            if (arg.equals("today", ignoreCase = true)) {
+                return date
+            }
+            if (arg.equals("tomorrow", ignoreCase = true)) {
+                return date.plusDays(1)
+            }
 
-        val long = arg.toLongOrNull()
-        if (long != null) {
-            return long
-        }
+            val long = arg.toLongOrNull()
+            if (long != null && long in LOWER_BOUND..UPPER_BOUND) {
+                return date.plusDays(long)
+            }
 
-        return -1
+            return LocalDate.EPOCH
+        }
     }
 }

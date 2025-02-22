@@ -1,7 +1,6 @@
 package bot
 
 import com.dsidak.bot.WeatherBot
-import org.mockito.Mockito
 import org.mockito.Mockito.*
 import org.telegram.telegrambots.abilitybots.api.db.DBContext
 import org.telegram.telegrambots.abilitybots.api.db.MapDBContext
@@ -11,6 +10,7 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
+import java.time.LocalDate
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -57,14 +57,14 @@ class WeatherBotTest {
 
         // We verify that the silent sender was called only ONCE and sent Hello World to CHAT_ID
         // The silent sender here is a mock!
-        Mockito.verify(sender, times(1)).send("Hello world!", CHAT_ID)
+        verify(sender, times(1)).send("Hello world!", CHAT_ID)
     }
 
     @Test
     fun testWeather() {
         val update = mockFullUpdate(MUSER, "/weather tomorrow")
         bot.consume(update)
-        verify(sender, times(1)).send("tomorrow", MUSER.id)
+        verify(sender, times(1)).send(LocalDate.now().plusDays(1).toString(), MUSER.id)
     }
 
     @Test
