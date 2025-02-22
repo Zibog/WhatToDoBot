@@ -12,7 +12,6 @@ val mockito: String by project
 
 repositories {
     mavenCentral()
-    maven("https://jitpack.io")
 }
 
 dependencies {
@@ -24,7 +23,7 @@ dependencies {
     // https://mvnrepository.com/artifact/io.github.oshai/kotlin-logging-jvm
     implementation("io.github.oshai:kotlin-logging-jvm:$kotlinLogging")
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    implementation("ch.qos.logback:logback-classic:")
+    implementation("ch.qos.logback:logback-classic:$logback")
 
     testImplementation(kotlin("test"))
     // https://mvnrepository.com/artifact/org.mockito/mockito-core
