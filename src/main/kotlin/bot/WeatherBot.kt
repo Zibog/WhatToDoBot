@@ -9,7 +9,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 
 class WeatherBot(telegramClient: TelegramClient, botUsername: String) : AbilityBot(telegramClient, botUsername) {
     override fun creatorId(): Long {
-        TODO("Not yet implemented")
+        return BotProperties.BOT_CREATOR_ID
     }
 
     internal fun setSilentSender(silentSender: SilentSender) {
