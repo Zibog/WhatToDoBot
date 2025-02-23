@@ -10,7 +10,6 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
-import java.time.LocalDate
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -42,10 +41,11 @@ class WeatherBotTest {
     @AfterTest
     fun tearDown() {
         db.clear()
+        db.close()
     }
 
     @Test
-    fun testSayHelloWorld() {
+    fun testHelloWorldCommand() {
         val update = Update()
         // Create a new User
         val user = User(USER_ID, FIRST_NAME, false)
@@ -53,7 +53,7 @@ class WeatherBotTest {
         val context = MessageContext.newContext(update, user, CHAT_ID, bot)
 
         // Consume a context in the lambda declaration, so we pass the context to the action logic
-        bot.sayHelloWorld().action().accept(context)
+        bot.helloWorldCommand().action().accept(context)
 
         // We verify that the silent sender was called only ONCE and sent Hello World to CHAT_ID
         // The silent sender here is a mock!
@@ -64,11 +64,11 @@ class WeatherBotTest {
     fun testWeather() {
         val update = mockFullUpdate(MUSER, "/weather tomorrow")
         bot.consume(update)
-        verify(sender, times(1)).send(LocalDate.now().plusDays(1).toString(), MUSER.id)
+        verify(sender, times(1)).send("Please, provide your location first using /location <city>", MUSER.id)
     }
 
     @Test
-    fun sendsInputArgsViolation() {
+    fun testWeatherCommand_wrongArgumentsNumber() {
         val zeroArgUpdate = mockFullUpdate(MUSER, "/weather")
         bot.consume(zeroArgUpdate)
         verify(sender, times(1)).send("Sorry, this feature requires 1 additional input.", MUSER.id)
