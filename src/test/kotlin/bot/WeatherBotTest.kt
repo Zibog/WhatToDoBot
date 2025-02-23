@@ -1,5 +1,6 @@
 package bot
 
+import com.dsidak.bot.BotProperties
 import com.dsidak.bot.WeatherBot
 import org.mockito.Mockito.*
 import org.telegram.telegrambots.abilitybots.api.db.DBContext
@@ -74,6 +75,52 @@ class WeatherBotTest {
         verify(sender, times(1)).send("Sorry, this feature requires 1 additional input.", MUSER.id)
 
         val multipleArgsUpdate = mockFullUpdate(MUSER, "/weather 1 2 3")
+        bot.consume(multipleArgsUpdate)
+        verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", MUSER.id)
+    }
+
+    @Test
+    fun testWeatherCommand_invalidArgument() {
+        val invalidArgUpdate = mockFullUpdate(MUSER, "/weather yesterday")
+        bot.consume(invalidArgUpdate)
+        verify(sender, times(1)).send("Invalid argument 'yesterday'. Please, provide valid offset", MUSER.id)
+
+        val invalidArgUpdate2 = mockFullUpdate(MUSER, "/weather 666")
+        bot.consume(invalidArgUpdate2)
+        verify(sender, times(1)).send("Invalid argument '666'. Please, provide valid offset", MUSER.id)
+
+        val invalidArgUpdate3 = mockFullUpdate(MUSER, "/weather -1")
+        bot.consume(invalidArgUpdate3)
+        verify(sender, times(1)).send("Invalid argument '-1'. Please, provide valid offset", MUSER.id)
+
+        val outOfBound = BotProperties.UPPER_BOUND + 1
+        val invalidArgUpdate4 = mockFullUpdate(MUSER, "/weather $outOfBound")
+        bot.consume(invalidArgUpdate4)
+        verify(sender, times(1)).send("Invalid argument '$outOfBound'. Please, provide valid offset", MUSER.id)
+    }
+
+    @Test
+    fun testLocationCommand_setThenUpdateLocation() {
+        val update = mockFullUpdate(MUSER, "/location Sofia")
+        bot.consume(update)
+        verify(sender, times(1)).send("Location set to Sofia", MUSER.id)
+
+        val update2 = mockFullUpdate(MUSER, "/location Plovdiv")
+        bot.consume(update2)
+        verify(sender, times(1)).send("Location updated from Sofia to Plovdiv", MUSER.id)
+
+        val update3 = mockFullUpdate(MUSER, "/location Tbilisi")
+        bot.consume(update3)
+        verify(sender, times(1)).send("Location updated from Plovdiv to Tbilisi", MUSER.id)
+    }
+
+    @Test
+    fun testLocationCommand_wrongArgumentsNumber() {
+        val zeroArgUpdate = mockFullUpdate(MUSER, "/location")
+        bot.consume(zeroArgUpdate)
+        verify(sender, times(1)).send("Sorry, this feature requires 1 additional input.", MUSER.id)
+
+        val multipleArgsUpdate = mockFullUpdate(MUSER, "/location Tut Tam")
         bot.consume(multipleArgsUpdate)
         verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", MUSER.id)
     }

@@ -62,14 +62,21 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String) : AbilityB
             .input(1)
             .action { ctx ->
                 val inputArg = ctx.arguments()[0]
+
                 log.debug { "Going to parse arg=$inputArg" }
                 val dateWithOffset = offsetDate(LocalDate.now(), inputArg)
+                if (dateWithOffset == LocalDate.EPOCH) {
+                    silent.send("Invalid argument '$inputArg'. Please, provide valid offset", ctx.chatId())
+                    return@action
+                }
+
                 log.debug { "Check the weather for $dateWithOffset" }
                 val location = readLocation(ctx.user().id)
                 if (location.isEmpty) {
                     silent.send("Please, provide your location first using /location <city>", ctx.chatId())
                     return@action
                 }
+
                 log.debug { "Location is $location" }
             }
             .build()
@@ -90,6 +97,12 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String) : AbilityB
             .action { ctx ->
                 val inputArg = ctx.arguments()[0]
                 log.debug { "Received location=$inputArg" }
+                val previousLocation = updateLocation(ctx.user().id, inputArg)
+                if (previousLocation.isEmpty) {
+                    silent.send("Location set to $inputArg", ctx.chatId())
+                } else {
+                    silent.send("Location updated from ${previousLocation.get()} to $inputArg", ctx.chatId())
+                }
             }
             .build()
     }
