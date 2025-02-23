@@ -42,7 +42,6 @@ class WeatherBotTest {
     @AfterTest
     fun tearDown() {
         db.clear()
-        db.close()
     }
 
     @Test
