@@ -53,6 +53,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String) : AbilityB
      *
      * @return the weather ability
      */
+    @Suppress("unused")
     fun weatherCommand(): Ability {
         return Ability.builder()
             .name("weather")
@@ -87,6 +88,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String) : AbilityB
      *
      * @return the location ability
      */
+    @Suppress("unused")
     fun locationCommand(): Ability {
         return Ability.builder()
             .name("location")
