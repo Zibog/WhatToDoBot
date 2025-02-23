@@ -1,5 +1,6 @@
 package com.dsidak.bot
 
+import com.dsidak.Secrets
 import com.dsidak.bot.BotProperties.LOWER_BOUND
 import com.dsidak.bot.BotProperties.UPPER_BOUND
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -24,7 +25,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
      * @return the creator ID
      */
     override fun creatorId(): Long {
-        return BotProperties.BOT_CREATOR_ID
+        return Secrets.BOT_CREATOR_ID
     }
 
     /**
