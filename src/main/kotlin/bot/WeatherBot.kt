@@ -4,6 +4,8 @@ import com.dsidak.bot.BotProperties.LOWER_BOUND
 import com.dsidak.bot.BotProperties.UPPER_BOUND
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
+import org.telegram.telegrambots.abilitybots.api.db.DBContext
+import org.telegram.telegrambots.abilitybots.api.db.MapDBContext.onlineInstance
 import org.telegram.telegrambots.abilitybots.api.objects.Ability
 import org.telegram.telegrambots.abilitybots.api.objects.Locality
 import org.telegram.telegrambots.abilitybots.api.objects.Privacy
@@ -12,7 +14,8 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.time.LocalDate
 import java.util.*
 
-class WeatherBot(telegramClient: TelegramClient, botUsername: String) : AbilityBot(telegramClient, botUsername) {
+class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBContext = onlineInstance(botUsername)) :
+    AbilityBot(telegramClient, botUsername, db) {
     private val log = KotlinLogging.logger {}
 
     /**

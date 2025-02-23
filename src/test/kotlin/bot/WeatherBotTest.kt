@@ -29,8 +29,8 @@ class WeatherBotTest {
     fun setUp() {
         // Offline DB instance will get deleted at JVM shutdown
         db = MapDBContext.offlineInstance("test${Random.nextInt()}")
-        // Create bot
-        bot = WeatherBot(OkHttpTelegramClient(TOKEN), BOT_USERNAME + Random.nextInt())
+        // Create bot with our offline DB
+        bot = WeatherBot(OkHttpTelegramClient(TOKEN), BOT_USERNAME + Random.nextInt(), db)
         // Call onRegister() to initialize abilities etc.
         bot.onRegister()
         // Create a new sender as a mock
@@ -63,72 +63,72 @@ class WeatherBotTest {
 
     @Test
     fun testWeather() {
-        val update = mockFullUpdate(MUSER, "/weather tomorrow")
+        val update = mockFullUpdate("/weather tomorrow")
         bot.consume(update)
-        verify(sender, times(1)).send("Please, provide your location first using /location <city>", MUSER.id)
+        verify(sender, times(1)).send("Please, provide your location first using /location <city>", USER.id)
     }
 
     @Test
     fun testWeatherCommand_wrongArgumentsNumber() {
-        val zeroArgUpdate = mockFullUpdate(MUSER, "/weather")
+        val zeroArgUpdate = mockFullUpdate("/weather")
         bot.consume(zeroArgUpdate)
-        verify(sender, times(1)).send("Sorry, this feature requires 1 additional input.", MUSER.id)
+        verify(sender, times(1)).send("Sorry, this feature requires 1 additional input.", USER.id)
 
-        val multipleArgsUpdate = mockFullUpdate(MUSER, "/weather 1 2 3")
+        val multipleArgsUpdate = mockFullUpdate("/weather 1 2 3")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", MUSER.id)
+        verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", USER.id)
     }
 
     @Test
     fun testWeatherCommand_invalidArgument() {
-        val invalidArgUpdate = mockFullUpdate(MUSER, "/weather yesterday")
+        val invalidArgUpdate = mockFullUpdate("/weather yesterday")
         bot.consume(invalidArgUpdate)
-        verify(sender, times(1)).send("Invalid argument 'yesterday'. Please, provide valid offset", MUSER.id)
+        verify(sender, times(1)).send("Invalid argument 'yesterday'. Please, provide valid offset", USER.id)
 
-        val invalidArgUpdate2 = mockFullUpdate(MUSER, "/weather 666")
+        val invalidArgUpdate2 = mockFullUpdate("/weather 666")
         bot.consume(invalidArgUpdate2)
-        verify(sender, times(1)).send("Invalid argument '666'. Please, provide valid offset", MUSER.id)
+        verify(sender, times(1)).send("Invalid argument '666'. Please, provide valid offset", USER.id)
 
-        val invalidArgUpdate3 = mockFullUpdate(MUSER, "/weather -1")
+        val invalidArgUpdate3 = mockFullUpdate("/weather -1")
         bot.consume(invalidArgUpdate3)
-        verify(sender, times(1)).send("Invalid argument '-1'. Please, provide valid offset", MUSER.id)
+        verify(sender, times(1)).send("Invalid argument '-1'. Please, provide valid offset", USER.id)
 
         val outOfBound = BotProperties.UPPER_BOUND + 1
-        val invalidArgUpdate4 = mockFullUpdate(MUSER, "/weather $outOfBound")
+        val invalidArgUpdate4 = mockFullUpdate("/weather $outOfBound")
         bot.consume(invalidArgUpdate4)
-        verify(sender, times(1)).send("Invalid argument '$outOfBound'. Please, provide valid offset", MUSER.id)
+        verify(sender, times(1)).send("Invalid argument '$outOfBound'. Please, provide valid offset", USER.id)
     }
 
     @Test
     fun testLocationCommand_setThenUpdateLocation() {
-        val update = mockFullUpdate(MUSER, "/location Sofia")
+        val update = mockFullUpdate("/location Sofia")
         bot.consume(update)
-        verify(sender, times(1)).send("Location set to Sofia", MUSER.id)
+        verify(sender, times(1)).send("Location set to Sofia", USER.id)
 
-        val update2 = mockFullUpdate(MUSER, "/location Plovdiv")
+        val update2 = mockFullUpdate("/location Plovdiv")
         bot.consume(update2)
-        verify(sender, times(1)).send("Location updated from Sofia to Plovdiv", MUSER.id)
+        verify(sender, times(1)).send("Location updated from Sofia to Plovdiv", USER.id)
 
-        val update3 = mockFullUpdate(MUSER, "/location Tbilisi")
+        val update3 = mockFullUpdate("/location Tbilisi")
         bot.consume(update3)
-        verify(sender, times(1)).send("Location updated from Plovdiv to Tbilisi", MUSER.id)
+        verify(sender, times(1)).send("Location updated from Plovdiv to Tbilisi", USER.id)
     }
 
     @Test
     fun testLocationCommand_wrongArgumentsNumber() {
-        val zeroArgUpdate = mockFullUpdate(MUSER, "/location")
+        val zeroArgUpdate = mockFullUpdate("/location")
         bot.consume(zeroArgUpdate)
-        verify(sender, times(1)).send("Sorry, this feature requires 1 additional input.", MUSER.id)
+        verify(sender, times(1)).send("Sorry, this feature requires 1 additional input.", USER.id)
 
-        val multipleArgsUpdate = mockFullUpdate(MUSER, "/location Tut Tam")
+        val multipleArgsUpdate = mockFullUpdate("/location Tut Tam")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", MUSER.id)
+        verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", USER.id)
     }
 
-    private fun mockFullUpdate(fromUser: User, args: String): Update {
-        bot.users()[MUSER.id] = MUSER
+    private fun mockFullUpdate(args: String, fromUser: User = USER): Update {
+        bot.users()[USER.id] = USER
         bot.users()[CREATOR.id] = CREATOR
-        bot.userIds()[MUSER.userName] = MUSER.id
+        bot.userIds()[USER.userName] = USER.id
         bot.userIds()[CREATOR.userName] = CREATOR.id
 
         bot.admins().add(CREATOR.id)
@@ -169,7 +169,7 @@ class WeatherBotTest {
         private const val TOKEN = "TOKEN"
         private const val BOT_USERNAME = "TestBot"
 
-        private val MUSER =
+        private val USER =
             User.builder().id(1).firstName("fname").lastName("lname").userName("uname").isBot(false).build()
         private val CREATOR =
             User.builder().id(777).firstName("creatorFirst").lastName("creatorLast").userName("creatorUsername")
