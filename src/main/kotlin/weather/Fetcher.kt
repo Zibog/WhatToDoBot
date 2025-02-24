@@ -2,6 +2,7 @@ package com.dsidak.weather
 
 import com.dsidak.Secrets
 import com.dsidak.bot.BotProperties
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URLEncoder
@@ -26,6 +27,8 @@ object Fetcher {
             .header("charset", StandardCharsets.UTF_8.name())
             .get()
             .build()
+
+        val response = executeRequest(request)
         // TODO: save fetched data to DB
         return "Let's do some code!"
     }
@@ -40,7 +43,10 @@ object Fetcher {
     internal fun toUrl(city: String, date: LocalDate): String {
         val offset = date.toEpochDay() - LocalDate.now().toEpochDay()
         val endpoint = if (offset == 0L) BotProperties.WEATHER_CURRENT else BotProperties.WEATHER_FORECAST
-        val url = "${BotProperties.WEATHER_API_URL}/$endpoint?q=${getCityQuery(city)}&appid=${Secrets.WEATHER_API_KEY}"
+        val url = "${BotProperties.WEATHER_API_URL}/$endpoint" +
+                "?q=${getCityQuery(city)}" +
+                "&appid=${Secrets.WEATHER_API_KEY}" +
+                "&units=${BotProperties.WEATHER_UNITS}"
         if (endpoint == BotProperties.WEATHER_FORECAST) {
             return url.plus("&cnt=$offset")
         }
@@ -55,5 +61,18 @@ object Fetcher {
      */
     private fun getCityQuery(city: String): String {
         return URLEncoder.encode(city, StandardCharsets.UTF_8)
+    }
+
+    internal fun executeRequest(request: Request): WeatherResponse {
+        httpClient.newCall(request).execute().use { response ->
+            if (response.isSuccessful) {
+                response.body?.use { body ->
+                    val weatherResponse = Json.decodeFromString<WeatherResponse>(body.string())
+                    return weatherResponse
+                }
+            }
+        }
+
+        throw StringIndexOutOfBoundsException()
     }
 }
