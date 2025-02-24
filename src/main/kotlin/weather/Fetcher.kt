@@ -1,5 +1,6 @@
 package com.dsidak.weather
 
+import arrow.core.Either
 import com.dsidak.Secrets
 import com.dsidak.bot.BotProperties
 import kotlinx.serialization.json.Json
@@ -28,7 +29,11 @@ object Fetcher {
             .get()
             .build()
 
-        val response = executeRequest(request)
+        val response = executeRequest(request).fold(
+            { errorDescription: String -> return errorDescription },
+            { response: WeatherResponse -> return@fold response }
+        )
+        // TODO: Handle response
         // TODO: save fetched data to DB
         return "Let's do some code!"
     }
@@ -63,16 +68,18 @@ object Fetcher {
         return URLEncoder.encode(city, StandardCharsets.UTF_8)
     }
 
-    internal fun executeRequest(request: Request): WeatherResponse {
+    internal fun executeRequest(request: Request): Either<String, WeatherResponse> {
         httpClient.newCall(request).execute().use { response ->
             if (response.isSuccessful) {
                 response.body?.use { body ->
                     val weatherResponse = Json.decodeFromString<WeatherResponse>(body.string())
-                    return weatherResponse
+                    return Either.Right(weatherResponse)
                 }
+            } else {
+                return Either.Left("Response failed with code ${response.code} ${response.message}")
             }
         }
 
-        throw StringIndexOutOfBoundsException()
+        return Either.Left("Failed to execute request, try again later")
     }
 }

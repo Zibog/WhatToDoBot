@@ -32,6 +32,9 @@ dependencies {
     // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-serialization-json
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinX")
 
+    // https://mvnrepository.com/artifact/io.arrow-kt/arrow-core
+    implementation("io.arrow-kt:arrow-core:2.0.1")
+
     testImplementation(kotlin("test"))
     // https://mvnrepository.com/artifact/org.mockito/mockito-core
     testImplementation("org.mockito:mockito-core:$mockito")
