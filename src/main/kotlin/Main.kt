@@ -1,6 +1,5 @@
 package com.dsidak
 
-import com.dsidak.bot.BotProperties
 import com.dsidak.bot.WeatherBot
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
@@ -9,8 +8,8 @@ import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication
 val log = KotlinLogging.logger {}
 
 fun main() {
-    val token = BotProperties.BOT_API_KEY
-    val botUsername = BotProperties.BOT_USERNAME
+    val token = Secrets.BOT_API_KEY
+    val botUsername = Secrets.BOT_USERNAME
     log.debug { "$botUsername starts using token=$token" }
     try {
         // Instantiate Telegram Bots API
