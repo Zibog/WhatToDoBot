@@ -12,7 +12,7 @@ import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 
-class Fetcher(val httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) {
+class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) {
     private val log = KotlinLogging.logger {}
 
     /**
