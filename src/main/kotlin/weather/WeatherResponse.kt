@@ -17,12 +17,13 @@ data class WeatherResponse(
     val sys: Sys,
     val timezone: Int,
     val id: Int,
-    val name: String,
+    @SerialName("name")
+    val cityName: String,
     @SerialName("cod")
     val code: Int
 ) {
     init {
-        require(name.isNotEmpty()) { "City name must not be empty" }
+        require(cityName.isNotEmpty()) { "City name must not be empty" }
     }
 }
 

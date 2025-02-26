@@ -27,7 +27,7 @@ class WeatherResponseTest {
         checkSys(2, 2031790, "GB", 1647325488, 1647367827, weatherResponse.sys)
         assertEquals(0, weatherResponse.timezone)
         assertEquals(2641549, weatherResponse.id)
-        assertEquals("Newtonhill", weatherResponse.name)
+        assertEquals("Newtonhill", weatherResponse.cityName)
         assertEquals(200, weatherResponse.code)
 
         resourceName = "Sofia_BG_current.json"
@@ -46,7 +46,7 @@ class WeatherResponseTest {
         checkSys(2, 2033225, "BG", 1740373841, 1740413370, weatherResponse.sys)
         assertEquals(7200, weatherResponse.timezone)
         assertEquals(727011, weatherResponse.id)
-        assertEquals("Sofia", weatherResponse.name)
+        assertEquals("Sofia", weatherResponse.cityName)
         assertEquals(200, weatherResponse.code)
     }
 
