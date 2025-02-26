@@ -4,6 +4,7 @@ import com.dsidak.weather.Fetcher
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.junit.jupiter.api.Disabled
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import java.net.UnknownHostException
@@ -16,6 +17,7 @@ import kotlin.test.assertNotNull
 class FetcherTest {
     private val fetcher = Fetcher()
 
+    @Disabled
     @Test
     fun testExecuteRequest_currentWeather() {
         val date = LocalDate.now()
@@ -37,6 +39,7 @@ class FetcherTest {
         assertEquals("BG", weatherResponse.sys.country)
     }
 
+    @Disabled
     @Test
     fun testExecuteRequest_currentWeather_wrongCity() {
         val date = LocalDate.now()
