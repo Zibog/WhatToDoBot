@@ -11,6 +11,8 @@ val kotlinLogging: String by project
 val logback: String by project
 val mockito: String by project
 val kotlinX: String by project
+val arrow: String by project
+val dotenv: String by project
 
 val mockitoAgent = configurations.create("mockitoAgent")
 
@@ -33,7 +35,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinX")
 
     // https://mvnrepository.com/artifact/io.arrow-kt/arrow-core
-    implementation("io.arrow-kt:arrow-core:2.0.1")
+    implementation("io.arrow-kt:arrow-core:$arrow")
+
+    // https://mvnrepository.com/artifact/io.github.cdimascio/dotenv-kotlin
+    implementation("io.github.cdimascio:dotenv-kotlin:$dotenv")
 
     testImplementation(kotlin("test"))
     // https://mvnrepository.com/artifact/org.mockito/mockito-core
