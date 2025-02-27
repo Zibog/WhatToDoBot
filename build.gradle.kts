@@ -13,6 +13,9 @@ val mockito: String by project
 val kotlinX: String by project
 val arrow: String by project
 val dotenv: String by project
+val ktor: String by project
+val exposedVersion: String by project
+val h2Version: String by project
 
 val mockitoAgent = configurations.create("mockitoAgent")
 
@@ -39,6 +42,15 @@ dependencies {
 
     // https://mvnrepository.com/artifact/io.github.cdimascio/dotenv-kotlin
     implementation("io.github.cdimascio:dotenv-kotlin:$dotenv")
+
+    // https://mvnrepository.com/artifact/io.ktor/ktor-server-core-jvm
+    implementation("io.ktor:ktor-server-core-jvm:$ktor")
+    // https://mvnrepository.com/artifact/org.jetbrains.exposed/exposed-core
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    // https://mvnrepository.com/artifact/org.jetbrains.exposed/exposed-jdbc
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    // https://mvnrepository.com/artifact/com.h2database/h2
+    implementation("com.h2database:h2:$h2Version")
 
     testImplementation(kotlin("test"))
     // https://mvnrepository.com/artifact/org.mockito/mockito-core
