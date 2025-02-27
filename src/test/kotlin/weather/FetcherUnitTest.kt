@@ -1,6 +1,6 @@
 package weather
 
-import com.dsidak.Secrets
+import com.dsidak.dotenv
 import com.dsidak.weather.Fetcher
 import java.time.LocalDate
 import kotlin.test.Test
@@ -10,7 +10,7 @@ class FetcherUnitTest {
     @Test
     fun testToUrl_currentWeather() {
         assertEquals(
-            "https://api.openweathermap.org/data/2.5/weather?q=London&appid=${Secrets.WEATHER_API_KEY}&units=metric",
+            "https://api.openweathermap.org/data/2.5/weather?q=London&appid=${dotenv["WEATHER_API_KEY"]}&units=metric",
             Fetcher.toUrl("London", LocalDate.now())
         )
     }
@@ -18,11 +18,11 @@ class FetcherUnitTest {
     @Test
     fun testToUrl_forecast() {
         assertEquals(
-            "https://api.openweathermap.org/data/2.5/forecast/daily?q=London&appid=${Secrets.WEATHER_API_KEY}&units=metric&cnt=1",
+            "https://api.openweathermap.org/data/2.5/forecast/daily?q=London&appid=${dotenv["WEATHER_API_KEY"]}&units=metric&cnt=1",
             Fetcher.toUrl("London", LocalDate.now().plusDays(1))
         )
         assertEquals(
-            "https://api.openweathermap.org/data/2.5/forecast/daily?q=London&appid=${Secrets.WEATHER_API_KEY}&units=metric&cnt=6",
+            "https://api.openweathermap.org/data/2.5/forecast/daily?q=London&appid=${dotenv["WEATHER_API_KEY"]}&units=metric&cnt=6",
             Fetcher.toUrl("London", LocalDate.now().plusDays(6))
         )
     }

@@ -1,8 +1,8 @@
 package com.dsidak.weather
 
 import arrow.core.Either
-import com.dsidak.Secrets
 import com.dsidak.bot.BotProperties
+import com.dsidak.dotenv
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -78,7 +78,7 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
             val endpoint = if (offset == 0L) BotProperties.WEATHER_CURRENT else BotProperties.WEATHER_FORECAST
             val url = "${BotProperties.WEATHER_API_URL}/$endpoint" +
                     "?q=${getCityQuery(city)}" +
-                    "&appid=${Secrets.WEATHER_API_KEY}" +
+                    "&appid=${dotenv["WEATHER_API_KEY"]}" +
                     "&units=${BotProperties.WEATHER_UNITS}"
             if (endpoint == BotProperties.WEATHER_FORECAST) {
                 return url.plus("&cnt=$offset")
