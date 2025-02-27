@@ -2,8 +2,12 @@ package com.dsidak.weather
 
 import arrow.core.Either
 import com.dsidak.bot.BotProperties
+import com.dsidak.db.DatabaseManager
+import com.dsidak.db.schemas.Location
 import com.dsidak.dotenv
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -23,8 +27,17 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
      * @return a string containing the weather data
      */
     fun fetchWeather(city: String, date: LocalDate): String {
-        // TODO: check if we have saved data for (city, date) in DB
-        val url = toUrl(city, date)
+        val location = runBlocking {
+            DatabaseManager.locationService.readByCity(city)
+        }
+        val url = if (location != null) {
+            log.info { "Using coordinates '${location.latitude}, ${location.longitude}' of ${location.city}" }
+            toUrl(location.latitude, location.longitude, date)
+        } else {
+            log.info { "Location not found in DB, will fetch from API" }
+            toUrl(city, date)
+        }
+
         val request = Request.Builder()
             .url(url)
             .header("charset", StandardCharsets.UTF_8.name())
@@ -35,9 +48,25 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
             { errorDescription: String -> return errorDescription },
             { response: WeatherResponse -> return@fold response }
         )
-        // TODO: Handle response
-        // TODO: save fetched data to DB
-        return "Let's do some code!"
+
+        if (location == null) {
+            runBlocking {
+                launch {
+                    DatabaseManager.locationService.create(
+                        Location(
+                            city = response.cityName,
+                            country = response.sys.country,
+                            latitude = response.coordinates.latitude,
+                            longitude = response.coordinates.longitude
+                        )
+                    )
+                }.join()
+            }
+        }
+
+        // TODO: Pass the response to a chatbot and return the response
+
+        return "The weather in ${response.cityName} is ${response.weather[0].description} with a temperature of ${response.main.temperature}°C"
     }
 
     internal fun executeRequest(request: Request): Either<String, WeatherResponse> {
@@ -78,6 +107,20 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
             val endpoint = if (offset == 0L) BotProperties.WEATHER_CURRENT else BotProperties.WEATHER_FORECAST
             val url = "${BotProperties.WEATHER_API_URL}/$endpoint" +
                     "?q=${getCityQuery(city)}" +
+                    "&appid=${dotenv["WEATHER_API_KEY"]}" +
+                    "&units=${BotProperties.WEATHER_UNITS}"
+            if (endpoint == BotProperties.WEATHER_FORECAST) {
+                return url.plus("&cnt=$offset")
+            }
+            return url
+        }
+
+        internal fun toUrl(latitude: Double, longitude: Double, date: LocalDate): String {
+            val offset = date.toEpochDay() - LocalDate.now().toEpochDay()
+            val endpoint = if (offset == 0L) BotProperties.WEATHER_CURRENT else BotProperties.WEATHER_FORECAST
+            val url = "${BotProperties.WEATHER_API_URL}/$endpoint" +
+                    "?lat=$latitude" +
+                    "&lon=$longitude" +
                     "&appid=${dotenv["WEATHER_API_KEY"]}" +
                     "&units=${BotProperties.WEATHER_UNITS}"
             if (endpoint == BotProperties.WEATHER_FORECAST) {

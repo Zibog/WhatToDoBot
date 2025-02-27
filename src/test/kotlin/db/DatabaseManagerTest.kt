@@ -10,15 +10,21 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class DatabaseManagerTest {
+    private val userToCreate = User(
+        id = Random.nextInt(),
+        firstName = "first",
+        lastName = null,
+        userName = "userName"
+    )
+    private val locationToCreate = Location(
+        city = "New York",
+        country = "USA",
+        latitude = 40.7128,
+        longitude = -74.0060
+    )
+
     @Test
     fun testDatabaseManager_createUser() {
-        val userToCreate = User(
-            id = Random.nextInt(),
-            firstName = "first",
-            lastName = null,
-            userName = "userName"
-        )
-
         val userId = runBlocking {
             DatabaseManager.userService.create(
                 userToCreate
@@ -34,13 +40,6 @@ class DatabaseManagerTest {
 
     @Test
     fun testDatabaseManager_createLocation() {
-        val locationToCreate = Location(
-            city = "New York",
-            country = "USA",
-            latitude = 40.7128,
-            longitude = -74.0060
-        )
-
         val locationId = runBlocking {
             DatabaseManager.locationService.create(
                 locationToCreate
@@ -56,25 +55,11 @@ class DatabaseManagerTest {
 
     @Test
     fun testDatabaseManager_createUserLocation() {
-        val userToCreate = User(
-            id = Random.nextInt(),
-            firstName = "first",
-            lastName = "last",
-            userName = "userName"
-        )
-
         val userId = runBlocking {
             DatabaseManager.userService.create(
                 userToCreate
             )
         }
-
-        val locationToCreate = Location(
-            city = "New York",
-            country = "USA",
-            latitude = 40.7128,
-            longitude = -74.0060
-        )
 
         val locationId = runBlocking {
             DatabaseManager.locationService.create(

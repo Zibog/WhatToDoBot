@@ -16,8 +16,8 @@ data class UserLocation(
 class UserLocationService(db: Database) {
     object UserLocations : Table() {
         val id = integer("id").autoIncrement()
-        val userId = integer("user_id")
-        val locationId = integer("location_id")
+        val userId = reference("user_id", UserService.Users.id)
+        val locationId = reference("location_id", LocationService.Locations.id)
 
         override val primaryKey = PrimaryKey(id)
     }

@@ -3,6 +3,7 @@ package com.dsidak.bot
 import com.dsidak.bot.BotProperties.LOWER_BOUND
 import com.dsidak.bot.BotProperties.UPPER_BOUND
 import com.dsidak.dotenv
+import com.dsidak.weather.Fetcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
 import org.telegram.telegrambots.abilitybots.api.db.DBContext
@@ -83,6 +84,10 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                 }
 
                 log.debug { "Location is $location" }
+
+                val responseToUser = Fetcher().fetchWeather(location.get(), dateWithOffset)
+                log.debug { "Response to user: $responseToUser" }
+                silent.send(responseToUser, ctx.chatId())
             }
             .build()
     }

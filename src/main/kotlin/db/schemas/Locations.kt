@@ -60,6 +60,23 @@ class LocationService(db: Database) {
         }
     }
 
+    suspend fun readByCity(city: String): Location? {
+        return dbQuery {
+            Locations.selectAll()
+                .where { Locations.city eq city }
+                .limit(1)
+                .map {
+                    Location(
+                        it[Locations.city],
+                        it[Locations.country],
+                        it[Locations.latitude],
+                        it[Locations.longitude]
+                    )
+                }
+                .singleOrNull()
+        }
+    }
+
     suspend fun update(id: Int, location: Location) {
         dbQuery {
             Locations.update({ Locations.id eq id }) {
