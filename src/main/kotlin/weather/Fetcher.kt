@@ -65,7 +65,7 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
             }
         }
 
-        val geminiResponse = Client().generateContent(response)
+        val geminiResponse = Client().generateContent(response, date)
 
         return "The weather in ${response.cityName} is ${response.weather[0].description} with a temperature of ${response.main.temperature}°C"
     }

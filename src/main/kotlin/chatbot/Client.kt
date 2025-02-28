@@ -11,20 +11,20 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.net.UnknownHostException
+import java.time.LocalDate
 
 class Client(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) {
     private val log = KotlinLogging.logger {}
 
-    fun generateContent(weather: WeatherResponse): Either<String, WeatherResponse> {
+    fun generateContent(weather: WeatherResponse, date: LocalDate): Either<String, WeatherResponse> {
         val content = """
-            |Weather in ${weather.cityName}:
+            |Weather in ${weather.cityName}, ${weather.sys.country}:
             |${weather.weather[0].description}
             |Temperature: ${weather.main.temperature}°C
             |Feels like: ${weather.main.feelsLike}°C
             |Humidity: ${weather.main.humidity}%
             |Wind speed: ${weather.wind.speed} m/s
-            |Sunrise: ${weather.sys.sunrise}
-            |Sunset: ${weather.sys.sunset}
+            |What would you recommend to do in ${weather.cityName} at $date and that weather?
         """.trimMargin()
         val requestContent = GeminiRequestContent(
             contents = listOf(
