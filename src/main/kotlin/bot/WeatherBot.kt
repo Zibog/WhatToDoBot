@@ -1,7 +1,6 @@
 package com.dsidak.bot
 
-import com.dsidak.bot.BotProperties.LOWER_BOUND
-import com.dsidak.bot.BotProperties.UPPER_BOUND
+import com.dsidak.config.config
 import com.dsidak.dotenv
 import com.dsidak.weather.Fetcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -158,7 +157,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
             }
 
             val long = arg.toLongOrNull()
-            if (long != null && long in LOWER_BOUND..UPPER_BOUND) {
+            if (long != null && long in config.lowerBound..config.upperBound) {
                 return date.plusDays(long)
             }
 

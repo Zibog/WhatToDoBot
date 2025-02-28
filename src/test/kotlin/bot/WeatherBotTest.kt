@@ -1,7 +1,7 @@
 package bot
 
-import com.dsidak.bot.BotProperties
 import com.dsidak.bot.WeatherBot
+import com.dsidak.config.config
 import org.mockito.Mockito.*
 import org.telegram.telegrambots.abilitybots.api.db.DBContext
 import org.telegram.telegrambots.abilitybots.api.db.MapDBContext
@@ -92,7 +92,7 @@ class WeatherBotTest {
         bot.consume(invalidArgUpdate3)
         verify(sender, times(1)).send("Invalid argument '-1'. Please, provide valid offset", USER.id)
 
-        val outOfBound = BotProperties.UPPER_BOUND + 1
+        val outOfBound = config.upperBound + 1
         val invalidArgUpdate4 = mockFullUpdate("/weather $outOfBound")
         bot.consume(invalidArgUpdate4)
         verify(sender, times(1)).send("Invalid argument '$outOfBound'. Please, provide valid offset", USER.id)

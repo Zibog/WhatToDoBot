@@ -52,6 +52,11 @@ dependencies {
     // https://mvnrepository.com/artifact/com.h2database/h2
     implementation("com.h2database:h2:$h2Version")
 
+    // https://mvnrepository.com/artifact/com.sksamuel.hoplite/hoplite-core
+    implementation("com.sksamuel.hoplite:hoplite-core:2.9.0")
+    // https://mvnrepository.com/artifact/com.sksamuel.hoplite/hoplite-yaml
+    implementation("com.sksamuel.hoplite:hoplite-yaml:2.9.0")
+
     testImplementation(kotlin("test"))
     // https://mvnrepository.com/artifact/org.mockito/mockito-core
     testImplementation("org.mockito:mockito-core:$mockito")
