@@ -1,6 +1,6 @@
 package com.dsidak.bot
 
-import com.dsidak.config.config
+import com.dsidak.configuration.config
 import com.dsidak.dotenv
 import com.dsidak.weather.Fetcher
 import io.github.oshai.kotlinlogging.KotlinLogging

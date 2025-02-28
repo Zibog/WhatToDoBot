@@ -1,6 +1,6 @@
 package com.dsidak.db
 
-import com.dsidak.config.config
+import com.dsidak.configuration.config
 import com.dsidak.db.schemas.LocationService
 import com.dsidak.db.schemas.UserLocationService
 import com.dsidak.db.schemas.UserService

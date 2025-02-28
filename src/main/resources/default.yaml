@@ -13,3 +13,8 @@ database:
   dbUser: root
   dbDriver: org.h2.Driver
   dbPassword:
+
+gemini:
+  modelUrl: https://generativelanguage.googleapis.com/v1beta/models
+  modelName: gemini-2.0-flash
+  modelAction: generateContent

@@ -1,7 +1,7 @@
 package bot
 
 import com.dsidak.bot.WeatherBot
-import com.dsidak.config.config
+import com.dsidak.configuration.config
 import org.mockito.Mockito.*
 import org.telegram.telegrambots.abilitybots.api.db.DBContext
 import org.telegram.telegrambots.abilitybots.api.db.MapDBContext

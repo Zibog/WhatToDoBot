@@ -1,7 +1,8 @@
 package com.dsidak.weather
 
 import arrow.core.Either
-import com.dsidak.config.config
+import com.dsidak.chatbot.Client
+import com.dsidak.configuration.config
 import com.dsidak.db.DatabaseManager
 import com.dsidak.db.schemas.Location
 import com.dsidak.dotenv
@@ -64,7 +65,7 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
             }
         }
 
-        // TODO: Pass the response to a chatbot and return the response
+        val geminiResponse = Client().generateContent(response)
 
         return "The weather in ${response.cityName} is ${response.weather[0].description} with a temperature of ${response.main.temperature}°C"
     }
