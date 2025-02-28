@@ -3,7 +3,7 @@ package com.dsidak.config
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.addResourceSource
 
-data class AppConfig(
+data class Config(
     val weather: Weather,
 
     val lowerBound: Long,
@@ -12,11 +12,11 @@ data class AppConfig(
     val database: Database
 )
 
-val appConfig by lazy {
+val config by lazy {
     ConfigLoaderBuilder.default()
         .addResourceSource("/default.yaml")
         .build()
-        .loadConfigOrThrow<AppConfig>()
+        .loadConfigOrThrow<Config>()
 }
 
 data class Weather(

@@ -1,7 +1,7 @@
 package com.dsidak.weather
 
 import arrow.core.Either
-import com.dsidak.bot.BotProperties
+import com.dsidak.config.config
 import com.dsidak.db.DatabaseManager
 import com.dsidak.db.schemas.Location
 import com.dsidak.dotenv
@@ -104,12 +104,12 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
          */
         internal fun toUrl(city: String, date: LocalDate): String {
             val offset = date.toEpochDay() - LocalDate.now().toEpochDay()
-            val endpoint = if (offset == 0L) BotProperties.WEATHER_CURRENT else BotProperties.WEATHER_FORECAST
-            val url = "${BotProperties.WEATHER_API_URL}/$endpoint" +
+            val endpoint = if (offset == 0L) config.weather.weatherCurrent else config.weather.weatherForecast
+            val url = "${config.weather.weatherApiUrl}/$endpoint" +
                     "?q=${getCityQuery(city)}" +
                     "&appid=${dotenv["WEATHER_API_KEY"]}" +
-                    "&units=${BotProperties.WEATHER_UNITS}"
-            if (endpoint == BotProperties.WEATHER_FORECAST) {
+                    "&units=${config.weather.weatherUnits}"
+            if (endpoint == config.weather.weatherForecast) {
                 return url.plus("&cnt=$offset")
             }
             return url
@@ -117,13 +117,13 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
 
         internal fun toUrl(latitude: Double, longitude: Double, date: LocalDate): String {
             val offset = date.toEpochDay() - LocalDate.now().toEpochDay()
-            val endpoint = if (offset == 0L) BotProperties.WEATHER_CURRENT else BotProperties.WEATHER_FORECAST
-            val url = "${BotProperties.WEATHER_API_URL}/$endpoint" +
+            val endpoint = if (offset == 0L) config.weather.weatherCurrent else config.weather.weatherForecast
+            val url = "${config.weather.weatherApiUrl}/$endpoint" +
                     "?lat=$latitude" +
                     "&lon=$longitude" +
                     "&appid=${dotenv["WEATHER_API_KEY"]}" +
-                    "&units=${BotProperties.WEATHER_UNITS}"
-            if (endpoint == BotProperties.WEATHER_FORECAST) {
+                    "&units=${config.weather.weatherUnits}"
+            if (endpoint == config.weather.weatherForecast) {
                 return url.plus("&cnt=$offset")
             }
             return url
