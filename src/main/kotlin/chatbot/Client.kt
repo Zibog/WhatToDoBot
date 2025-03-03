@@ -15,6 +15,7 @@ import java.time.LocalDate
 
 class Client(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) {
     private val log = KotlinLogging.logger {}
+    private val json = Json { ignoreUnknownKeys = true }
 
     fun generateContent(weather: WeatherResponse, date: LocalDate): Either<String, WeatherResponse> {
         val content = """
@@ -26,14 +27,14 @@ class Client(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().
             |Wind speed: ${weather.wind.speed} m/s
             |What would you recommend to do in ${weather.cityName} at $date and that weather?
         """.trimMargin()
-        val requestContent = GeminiRequestContent(
+        val requestContent = GeminiFlashRequest(
             contents = listOf(
                 Content(
                     parts = listOf(ContentPart(text = content))
                 )
             )
         )
-        val jsonRequest = Json.encodeToString(requestContent)
+        val jsonRequest = json.encodeToString(requestContent)
 
         val responseEither = executeRequest(
             Request.Builder()

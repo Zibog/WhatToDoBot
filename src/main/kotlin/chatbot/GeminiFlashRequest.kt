@@ -3,7 +3,7 @@ package com.dsidak.chatbot
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class GeminiRequestContent(
+data class GeminiFlashRequest(
     val contents: List<Content>
 )
 
