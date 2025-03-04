@@ -6,13 +6,14 @@ import com.dsidak.configuration.config
 import com.dsidak.db.DatabaseManager
 import com.dsidak.db.schemas.Location
 import com.dsidak.dotenv
+import com.dsidak.log
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.net.URLEncoder
 import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
@@ -101,43 +102,50 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
          *
          * @param city the name of the city
          * @param date the date for which to fetch the weather
-         * @return the constructed URL as a string
+         * @return the constructed URL
          */
-        internal fun toUrl(city: String, date: LocalDate): String {
-            val offset = date.toEpochDay() - LocalDate.now().toEpochDay()
-            val endpoint = if (offset == 0L) config.weather.weatherCurrent else config.weather.weatherForecast
-            val url = "${config.weather.weatherApiUrl}/$endpoint" +
-                    "?q=${getCityQuery(city)}" +
-                    "&appid=${dotenv["WEATHER_API_KEY"]}" +
-                    "&units=${config.weather.weatherUnits}"
-            if (endpoint == config.weather.weatherForecast) {
-                return url.plus("&cnt=$offset")
-            }
-            return url
+        internal fun toUrl(city: String, date: LocalDate): HttpUrl {
+            return buildUrlBase(date)
+                .addQueryParameter("q", city)
+                .build()
         }
 
-        internal fun toUrl(latitude: Double, longitude: Double, date: LocalDate): String {
-            val offset = date.toEpochDay() - LocalDate.now().toEpochDay()
-            val endpoint = if (offset == 0L) config.weather.weatherCurrent else config.weather.weatherForecast
-            val url = "${config.weather.weatherApiUrl}/$endpoint" +
-                    "?lat=$latitude" +
-                    "&lon=$longitude" +
-                    "&appid=${dotenv["WEATHER_API_KEY"]}" +
-                    "&units=${config.weather.weatherUnits}"
-            if (endpoint == config.weather.weatherForecast) {
-                return url.plus("&cnt=$offset")
-            }
-            return url
+        internal fun toUrl(latitude: Double, longitude: Double, date: LocalDate): HttpUrl {
+            return buildUrlBase(date)
+                .addQueryParameter("lat", latitude.toString())
+                .addQueryParameter("lon", longitude.toString())
+                .build()
         }
 
-        /**
-         * Encodes the city name for use in the URL query.
-         *
-         * @param city the name of the city
-         * @return the encoded city name
-         */
-        private fun getCityQuery(city: String): String {
-            return URLEncoder.encode(city, StandardCharsets.UTF_8)
+        private fun buildUrlBase(date: LocalDate): HttpUrl.Builder {
+            val offset = date.toEpochDay() - LocalDate.now().toEpochDay()
+            val endpoint = when (offset) {
+                !in config.lowerBound..config.upperBound -> {
+                    log.error { "Offset=$offset due to date=$date, should be between ${config.lowerBound} and ${config.upperBound}" }
+                    throw IllegalArgumentException("Wrong date offset: should be between ${config.lowerBound} and ${config.upperBound}, but was $offset")
+                }
+
+                0L -> {
+                    config.weather.weatherCurrent
+                }
+
+                else -> {
+                    config.weather.weatherForecast
+                }
+            }
+
+            val builder = HttpUrl.Builder()
+                .scheme("https")
+                .host(config.weather.weatherHost)
+                .addPathSegments(config.weather.weatherPath)
+                .addPathSegment(endpoint)
+                .addQueryParameter("appid", dotenv["WEATHER_API_KEY"])
+                .addQueryParameter("units", config.weather.weatherUnits)
+            if (endpoint == config.weather.weatherForecast) {
+                builder.addQueryParameter("cnt", offset.toString())
+            }
+
+            return builder
         }
     }
 }

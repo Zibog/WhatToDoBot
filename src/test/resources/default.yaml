@@ -1,6 +1,7 @@
 weather:
-  weatherApiUrl: https://api.openweathermap.org/data/2.5
-  weatherForecast: forecast/daily
+  weatherHost: api.openweathermap.org
+  weatherPath: data/2.5
+  weatherForecast: forecast
   weatherCurrent: weather
   weatherUnits: metric
 
