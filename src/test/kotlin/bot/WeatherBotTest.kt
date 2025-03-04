@@ -2,6 +2,7 @@ package bot
 
 import com.dsidak.bot.WeatherBot
 import com.dsidak.configuration.config
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.*
 import org.telegram.telegrambots.abilitybots.api.db.DBContext
 import org.telegram.telegrambots.abilitybots.api.db.MapDBContext
@@ -62,9 +63,18 @@ class WeatherBotTest {
 
     @Test
     fun testWeather() {
-        val update = mockFullUpdate("/weather tomorrow")
+        val update = mockFullUpdate("/weather today")
         bot.consume(update)
         verify(sender, times(1)).send("Please, provide your location first using /location <city>", USER.id)
+
+        val updateLocation = mockFullUpdate("/location Sofia")
+        bot.consume(updateLocation)
+        verify(sender, times(1)).send("Location set to Sofia", USER.id)
+
+        // Try to ask again with city set
+        bot.consume(update)
+        // TODO: potentially flaky. We should ask the chat bot for some specific structure of the output, which can be tested
+        verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(USER.id))
     }
 
     @Test

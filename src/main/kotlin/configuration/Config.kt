@@ -11,7 +11,9 @@ data class Config(
 
     val database: Database,
 
-    val gemini: Gemini
+    val gemini: Gemini,
+
+    val requestTimeout: Long
 )
 
 val config by lazy {

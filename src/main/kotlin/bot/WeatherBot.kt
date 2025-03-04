@@ -86,7 +86,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
 
                 val responseToUser = Fetcher().fetchWeather(location.get(), dateWithOffset)
                 log.debug { "Response to user: $responseToUser" }
-                silent.send(responseToUser, ctx.chatId())
+                silent.sendMd(responseToUser, ctx.chatId())
             }
             .build()
     }

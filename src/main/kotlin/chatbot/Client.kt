@@ -12,12 +12,16 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.net.UnknownHostException
 import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 
-class Client(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) {
+class Client(
+    private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
+        .callTimeout(config.requestTimeout, TimeUnit.SECONDS).build()
+) {
     private val log = KotlinLogging.logger {}
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun generateContent(weather: WeatherResponse, date: LocalDate): Either<String, WeatherResponse> {
+    fun generateContent(weather: WeatherResponse, date: LocalDate): String {
         val content = """
             |Weather in ${weather.cityName}, ${weather.sys.country}:
             |${weather.weather[0].description}
@@ -26,6 +30,7 @@ class Client(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().
             |Humidity: ${weather.main.humidity}%
             |Wind speed: ${weather.wind.speed} m/s
             |What would you recommend to do in ${weather.cityName} at $date and that weather?
+            |Start with words "I recommend you to" and then describe your recommendation.
         """.trimMargin()
         val requestContent = GeminiFlashRequest(
             contents = listOf(
@@ -43,17 +48,24 @@ class Client(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().
                 .build()
         )
 
-        // TODO: return actual response
-        return responseEither
+        return responseEither.fold(
+            { errorDescription: String ->
+                log.error { errorDescription }
+                "Failed to generate content, try again later"
+            },
+            { response: GeminiFlashResponse ->
+                response.candidates[0].content.parts[0].text
+            }
+        )
     }
 
-    private fun executeRequest(request: Request): Either<String, WeatherResponse> {
+    private fun executeRequest(request: Request): Either<String, GeminiFlashResponse> {
         runCatching {
             httpClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
                     response.body?.use { body ->
-                        val weatherResponse = Json.decodeFromString<WeatherResponse>(body.string())
-                        return Either.Right(weatherResponse)
+                        val geminiResponse = json.decodeFromString<GeminiFlashResponse>(body.string())
+                        return Either.Right(geminiResponse)
                     }
                 } else {
                     return Either.Left("Request failed: ${response.code} ${response.message}")

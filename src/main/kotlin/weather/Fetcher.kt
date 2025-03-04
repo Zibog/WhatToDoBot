@@ -19,6 +19,7 @@ import java.time.LocalDate
 
 class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) {
     private val log = KotlinLogging.logger {}
+    private val client = Client()
 
     /**
      * Fetches the weather data for a given city and date.
@@ -65,9 +66,8 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
             }
         }
 
-        val geminiResponse = Client().generateContent(response, date)
-
-        return "The weather in ${response.cityName} is ${response.weather[0].description} with a temperature of ${response.main.temperature}°C"
+        val geminiResponse = client.generateContent(response, date)
+        return geminiResponse
     }
 
     internal fun executeRequest(request: Request): Either<String, WeatherResponse> {
