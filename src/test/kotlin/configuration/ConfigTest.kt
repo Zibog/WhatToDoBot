@@ -1,5 +1,6 @@
 package configuration
 
+import base.ResourceTestBase
 import com.dsidak.configuration.Config
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.addFileSource
@@ -7,7 +8,7 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 
-class ConfigTest {
+class ConfigTest : ResourceTestBase {
     @Test
     fun testConfig_defaultConfigIsValid() {
         val configFile = File("src/main/resources/default.yaml")
@@ -24,7 +25,7 @@ class ConfigTest {
 
     @Test
     fun testConfig_testConfigIsValid() {
-        val configFile = File("src/test/resources/default.yaml")
+        val configFile = File("$resources/default.yaml")
 
         assert(configFile.exists())
 
