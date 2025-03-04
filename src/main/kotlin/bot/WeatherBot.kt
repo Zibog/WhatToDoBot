@@ -1,6 +1,6 @@
 package com.dsidak.bot
 
-import com.dsidak.config.config
+import com.dsidak.configuration.config
 import com.dsidak.dotenv
 import com.dsidak.weather.Fetcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -86,7 +86,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
 
                 val responseToUser = Fetcher().fetchWeather(location.get(), dateWithOffset)
                 log.debug { "Response to user: $responseToUser" }
-                silent.send(responseToUser, ctx.chatId())
+                silent.sendMd(responseToUser, ctx.chatId())
             }
             .build()
     }

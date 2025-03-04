@@ -1,4 +1,4 @@
-package com.dsidak.config
+package com.dsidak.configuration
 
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.addResourceSource
@@ -9,7 +9,11 @@ data class Config(
     val lowerBound: Long,
     val upperBound: Long,
 
-    val database: Database
+    val database: Database,
+
+    val gemini: Gemini,
+
+    val requestTimeout: Long
 )
 
 val config by lazy {
@@ -31,4 +35,10 @@ data class Database(
     val dbHost: String,
     val dbUser: String,
     val dbPassword: String
+)
+
+data class Gemini(
+    val modelUrl: String,
+    val modelName: String,
+    val modelAction: String
 )

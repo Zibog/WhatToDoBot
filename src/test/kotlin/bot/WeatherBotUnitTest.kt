@@ -1,7 +1,7 @@
 package bot
 
 import com.dsidak.bot.WeatherBot
-import com.dsidak.config.config
+import com.dsidak.configuration.config
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals

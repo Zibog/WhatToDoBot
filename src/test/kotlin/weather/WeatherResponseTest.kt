@@ -1,18 +1,17 @@
 package weather
 
+import base.ResourceTestBase
 import com.dsidak.weather.*
 import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class WeatherResponseTest {
-    private val path = "src/test/resources"
-
+class WeatherResponseTest : ResourceTestBase {
     @Test
     fun testDecodeJson_current_city() {
         var resourceName = "Newtonhill_GB_current.json"
-        var file = File("$path/$resourceName")
+        var file = File("$resources/$resourceName")
 
         var weatherResponse = Json.decodeFromString<WeatherResponse>(file.readText())
         checkCoordinates(-2.15, 57.0, weatherResponse.coordinates)
@@ -31,7 +30,7 @@ class WeatherResponseTest {
         assertEquals(200, weatherResponse.code)
 
         resourceName = "Sofia_BG_current.json"
-        file = File("$path/$resourceName")
+        file = File("$resources/$resourceName")
 
         weatherResponse = Json.decodeFromString<WeatherResponse>(file.readText())
         checkCoordinates(23.3242, 42.6975, weatherResponse.coordinates)

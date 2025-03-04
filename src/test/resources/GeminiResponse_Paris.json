@@ -1,0 +1,33 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "role": "model",
+        "parts": [
+          {
+            "text": "The capital of France is Paris."
+          }
+        ]
+      },
+      "finishReason": "STOP",
+      "safetyRatings": [
+        {
+          "category": "HARM_CATEGORY_UNSPECIFIED",
+          "probability": "NEGLIGIBLE"
+        }
+      ],
+      "citationMetadata": {
+        "citations": []
+      },
+      "tokenCount": 10
+    }
+  ],
+  "promptFeedback": {
+    "safetyRatings": [
+      {
+        "category": "HARM_CATEGORY_UNSPECIFIED",
+        "probability": "NEGLIGIBLE"
+      }
+    ]
+  }
+}
