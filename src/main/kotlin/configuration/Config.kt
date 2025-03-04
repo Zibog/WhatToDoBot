@@ -24,7 +24,8 @@ val config by lazy {
 }
 
 data class Weather(
-    val weatherApiUrl: String,
+    val weatherHost: String,
+    val weatherPath: String,
     val weatherForecast: String,
     val weatherCurrent: String,
     val weatherUnits: String

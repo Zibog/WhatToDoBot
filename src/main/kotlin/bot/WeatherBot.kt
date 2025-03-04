@@ -84,7 +84,13 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
 
                 log.debug { "Location is $location" }
 
-                val responseToUser = Fetcher().fetchWeather(location.get(), dateWithOffset)
+                val responseToUser = try {
+                    Fetcher().fetchWeather(location.get(), dateWithOffset)
+                } catch (e: IllegalArgumentException) {
+                    "Wrong input data: ${e.message}"
+                } catch (e: Exception) {
+                    "Unexpected error: ${e.message}"
+                }
                 log.debug { "Response to user: $responseToUser" }
                 silent.sendMd(responseToUser, ctx.chatId())
             }

@@ -23,13 +23,14 @@ class Client(
 
     fun generateContent(weather: WeatherResponse, date: LocalDate): String {
         val content = """
-            |Weather in ${weather.cityName}, ${weather.sys.country}:
+            |Weather in ${weather.cityName}, ${weather.country}:
             |${weather.weather[0].description}
             |Temperature: ${weather.main.temperature}°C
             |Feels like: ${weather.main.feelsLike}°C
             |Humidity: ${weather.main.humidity}%
             |Wind speed: ${weather.wind.speed} m/s
             |What would you recommend to do in ${weather.cityName} at $date and that weather?
+            |Advice something interesting and unique.
             |Start with words "I recommend you to" and then describe your recommendation.
         """.trimMargin()
         val requestContent = GeminiFlashRequest(
