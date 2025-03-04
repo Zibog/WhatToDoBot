@@ -15,6 +15,7 @@ jobs:
       BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
       BOT_CREATOR_ID: ${{ secrets.BOT_CREATOR_ID }}
       WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
