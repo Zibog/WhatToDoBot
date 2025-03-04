@@ -21,6 +21,7 @@ import java.time.LocalDate
 class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) {
     private val log = KotlinLogging.logger {}
     private val client = Client()
+    private val json = Json { ignoreUnknownKeys = true }
 
     /**
      * Fetches the weather data for a given city and date.
@@ -58,7 +59,7 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
                     DatabaseManager.locationService.create(
                         Location(
                             city = response.cityName,
-                            country = response.sys.country,
+                            country = response.country,
                             latitude = response.coordinates.latitude,
                             longitude = response.coordinates.longitude
                         )
@@ -76,7 +77,11 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
             httpClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
                     response.body?.use { body ->
-                        val weatherResponse = Json.decodeFromString<WeatherResponse>(body.string())
+                        val weatherResponse = if (request.url.queryParameter("cnt") == null) {
+                            json.decodeFromString<CurrentWeatherResponse>(body.string())
+                        } else {
+                            json.decodeFromString<ForecastWeatherResponse>(body.string())
+                        }
                         return Either.Right(weatherResponse)
                     }
                 } else {

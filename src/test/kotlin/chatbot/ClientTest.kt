@@ -8,30 +8,36 @@ import kotlin.test.Test
 
 class ClientTest {
     @Test
-    fun testGenerateContent() {
+    fun testGenerateContent_current() {
         val client = Client()
-        val geminiResponse = client.generateContent(mockWeatherResponse(), LocalDate.now())
+        val geminiResponse = client.generateContent(mockCurrent(), LocalDate.now())
         assert(geminiResponse.isNotEmpty())
     }
 
-    private fun mockWeatherResponse(): WeatherResponse {
-        val mock = Mockito.mock(WeatherResponse::class.java)
+    @Test
+    fun testGenerateContent_forecast() {
+        val client = Client()
+        val geminiResponse = client.generateContent(mockForecast(), LocalDate.now().plusDays(2))
+        assert(geminiResponse.isNotEmpty())
+    }
+
+    private fun mockCurrent(): WeatherResponse {
+        return mockWeatherResponse(Mockito.mock(CurrentWeatherResponse::class.java))
+    }
+
+    private fun mockForecast(): WeatherResponse {
+        return mockWeatherResponse(Mockito.mock(ForecastWeatherResponse::class.java))
+    }
+
+    private fun mockWeatherResponse(mock: WeatherResponse): WeatherResponse {
         Mockito.`when`(mock.cityName).thenReturn("London")
-        val sys = mockSys()
-        Mockito.`when`(mock.sys).thenReturn(sys)
+        Mockito.`when`(mock.country).thenReturn("GB")
         val weather = mockWeather()
         Mockito.`when`(mock.weather).thenReturn(weather)
         val main = mockMain()
         Mockito.`when`(mock.main).thenReturn(main)
         val wind = mockWind()
         Mockito.`when`(mock.wind).thenReturn(wind)
-        return mock
-    }
-
-    private fun mockSys(): Sys {
-        val mock = Mockito.mock(Sys::class.java)
-        Mockito.`when`(mock.country).thenReturn("GB")
-
         return mock
     }
 

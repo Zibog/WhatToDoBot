@@ -32,9 +32,8 @@ class FetcherTest {
         assert(response.isRight())
         val weatherResponse = response.getOrNull()
         assertNotNull(weatherResponse)
-        assertEquals(200, weatherResponse.code)
         assertEquals("Sofia", weatherResponse.cityName)
-        assertEquals("BG", weatherResponse.sys.country)
+        assertEquals("BG", weatherResponse.country)
     }
 
     @Test
@@ -75,5 +74,25 @@ class FetcherTest {
 
         assert(response.isLeft())
         assertEquals("Failed to execute request: can't connect to remote service", response.leftOrNull())
+    }
+
+    @Test
+    fun testExecuteRequest_forecast() {
+        val date = LocalDate.now().plusDays(1)
+        val url = Fetcher.toUrl("München", date)
+
+        val request = Request.Builder()
+            .url(url)
+            .header("charset", StandardCharsets.UTF_8.name())
+            .get()
+            .build()
+
+        val response = fetcher.executeRequest(request)
+
+        assert(response.isRight())
+        val weatherResponse = response.getOrNull()
+        assertNotNull(weatherResponse)
+        assertEquals("Munich", weatherResponse.cityName)
+        assertEquals("DE", weatherResponse.country)
     }
 }
