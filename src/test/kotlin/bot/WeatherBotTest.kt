@@ -2,6 +2,7 @@ package bot
 
 import com.dsidak.bot.WeatherBot
 import com.dsidak.configuration.config
+import org.junit.jupiter.api.Disabled
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.*
 import org.telegram.telegrambots.abilitybots.api.db.DBContext
@@ -132,6 +133,27 @@ class WeatherBotTest {
         val multipleArgsUpdate = mockFullUpdate("/location Tut Tam")
         bot.consume(multipleArgsUpdate)
         verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", USER.id)
+    }
+
+    @Test
+    fun testDefault_anyText() {
+        var update = mockFullUpdate("Hello")
+        bot.consume(update)
+        val message = """This bot works only with commands. To check them, use `/commands` or `/help`"""
+        verify(sender, times(1)).sendMd(message, USER.id)
+
+        update = mockFullUpdate("Hello, World!")
+        bot.consume(update)
+        verify(sender, times(2)).sendMd(message, USER.id)
+    }
+
+    @Disabled("Can't capture arbitrary commands due to AbilityBot limitations")
+    @Test
+    fun testDefault_unknownCommand() {
+        val update = mockFullUpdate("/unknown")
+        bot.consume(update)
+        val message = """This bot works only with commands. To check them, use `/commands` or `/help`"""
+        verify(sender, times(1)).sendMd(message, USER.id)
     }
 
     private fun mockFullUpdate(args: String, fromUser: User = USER): Update {

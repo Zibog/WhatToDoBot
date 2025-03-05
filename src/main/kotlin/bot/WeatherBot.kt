@@ -3,6 +3,7 @@ package com.dsidak.bot
 import com.dsidak.configuration.config
 import com.dsidak.dotenv
 import com.dsidak.weather.Fetcher
+import com.google.common.base.Predicates
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
 import org.telegram.telegrambots.abilitybots.api.db.DBContext
@@ -144,6 +145,20 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
     private fun updateLocation(userId: Long, location: String): Optional<String> {
         val locations = db.getMap<Long, String>("LOCATIONS")
         return Optional.ofNullable(locations.put(userId, location))
+    }
+
+    @Suppress("unused")
+    fun defaultCommand(): Ability {
+        return Ability.builder()
+            .name(DEFAULT)
+            .flag(Predicates.alwaysTrue())
+            .privacy(Privacy.PUBLIC)
+            .locality(Locality.ALL)
+            .action { ctx ->
+                val message = """This bot works only with commands. To check them, use `/commands` or `/help`"""
+                silent.sendMd(message, ctx.chatId())
+            }
+            .build()
     }
 
     companion object {
