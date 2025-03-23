@@ -122,6 +122,23 @@ class WeatherBotTest {
     }
 
     @Test
+    fun testRestartCommand() {
+        val restartUpdate = mockFullUpdate("/restart")
+        bot.consume(restartUpdate)
+        verify(sender, times(1)).send("No location was set", USER.id)
+
+        val updateLocation = mockFullUpdate("/location Sofia")
+        bot.consume(updateLocation)
+        val restartUpdate2 = mockFullUpdate("/restart")
+        bot.consume(restartUpdate2)
+        verify(sender, times(1)).send("Location dropped from Sofia", USER.id)
+
+        val restartUpdate3 = mockFullUpdate("/restart")
+        bot.consume(restartUpdate3)
+        verify(sender, times(2)).send("No location was set", USER.id)
+    }
+
+    @Test
     fun testHelpCommand() {
         val update = mockFullUpdate("/help")
         bot.consume(update)

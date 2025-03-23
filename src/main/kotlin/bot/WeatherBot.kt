@@ -126,9 +126,32 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
      * @param location the new location
      * @return an [Optional] containing the previous location if it existed, otherwise [Optional.empty]
      */
-    private fun updateLocation(userId: Long, location: String): Optional<String> {
+    private fun updateLocation(userId: Long, location: String?): Optional<String> {
         val locations = db.getMap<Long, String>("LOCATIONS")
-        return Optional.ofNullable(locations.put(userId, location))
+        val previous = if (location == null) {
+            locations.remove(userId)
+        } else {
+            locations.put(userId, location)
+        }
+        return Optional.ofNullable(previous)
+    }
+
+    @Suppress("unused")
+    fun restartCommand(): Ability {
+        return Ability.builder()
+            .name("restart")
+            .info("Drops your location")
+            .privacy(Privacy.PUBLIC)
+            .locality(Locality.ALL)
+            .action { ctx ->
+                val previousLocation = updateLocation(ctx.user().id, null)
+                if (previousLocation.isEmpty) {
+                    silent.send("No location was set", ctx.chatId())
+                } else {
+                    silent.send("Location dropped from ${previousLocation.get()}", ctx.chatId())
+                }
+            }
+            .build()
     }
 
     @Suppress("unused")
