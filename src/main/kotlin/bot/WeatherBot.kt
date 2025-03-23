@@ -39,21 +39,6 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
     }
 
     /**
-     * Creates an ability that responds with "Hello world!".
-     *
-     * @return the hello world ability
-     */
-    fun helloWorldCommand(): Ability {
-        return Ability.builder()
-            .name("hello")
-            .info("Just says hello world")
-            .privacy(Privacy.PUBLIC)
-            .locality(Locality.ALL)
-            .action { ctx -> silent.send("Hello world!", ctx.chatId()) }
-            .build()
-    }
-
-    /**
      * Creates an ability that provides weather information for a specified date.
      *
      * @return the weather ability

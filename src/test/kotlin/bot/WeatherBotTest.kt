@@ -7,7 +7,6 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.*
 import org.telegram.telegrambots.abilitybots.api.db.DBContext
 import org.telegram.telegrambots.abilitybots.api.db.MapDBContext
-import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.abilitybots.api.sender.SilentSender
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -44,22 +43,6 @@ class WeatherBotTest {
     @AfterTest
     fun tearDown() {
         db.clear()
-    }
-
-    @Test
-    fun testHelloWorldCommand() {
-        val update = Update()
-        // Create a new User
-        val user = User(USER_ID, FIRST_NAME, false)
-        // Context is a necessary consumer item for the ability
-        val context = MessageContext.newContext(update, user, CHAT_ID, bot)
-
-        // Consume a context in the lambda declaration, so we pass the context to the action logic
-        bot.helloWorldCommand().action().accept(context)
-
-        // We verify that the silent sender was called only ONCE and sent Hello World to CHAT_ID
-        // The silent sender here is a mock!
-        verify(sender, times(1)).send("Hello world!", CHAT_ID)
     }
 
     @Test
@@ -216,13 +199,6 @@ class WeatherBotTest {
     }
 
     companion object {
-        // User-specific constants
-        private const val USER_ID = 666L
-        private const val FIRST_NAME = "Abobus"
-
-        // Chat-specific constants
-        private const val CHAT_ID = 666L
-
         // Bot-specific constants
         private const val TOKEN = "TOKEN"
         private const val BOT_USERNAME = "TestBot"
