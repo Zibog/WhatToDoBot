@@ -183,7 +183,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
             .action { ctx ->
-                val message = """This bot works only with commands. To check them, use `/commands` or `/help`"""
+                val message = """This bot works only with commands. To check them, use /commands or /help"""
                 silent.sendMd(message, ctx.chatId())
             }
             .build()

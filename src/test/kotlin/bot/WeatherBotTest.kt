@@ -166,7 +166,7 @@ class WeatherBotTest {
     fun testDefault_anyText() {
         var update = mockFullUpdate("Hello")
         bot.consume(update)
-        val message = """This bot works only with commands. To check them, use `/commands` or `/help`"""
+        val message = """This bot works only with commands. To check them, use /commands or /help"""
         verify(sender, times(1)).sendMd(message, USER.id)
 
         update = mockFullUpdate("Hello, World!")
@@ -179,7 +179,7 @@ class WeatherBotTest {
     fun testDefault_unknownCommand() {
         val update = mockFullUpdate("/unknown")
         bot.consume(update)
-        val message = """This bot works only with commands. To check them, use `/commands` or `/help`"""
+        val message = """This bot works only with commands. To check them, use /commands or /help"""
         verify(sender, times(1)).sendMd(message, USER.id)
     }
 
