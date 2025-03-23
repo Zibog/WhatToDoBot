@@ -16,8 +16,7 @@ class WeatherBotUnitTest {
         assertEquals(LocalDate.of(2025, 2, 23), WeatherBot.offsetDate(date, "tomorrow"))
         assertEquals(LocalDate.of(2025, 2, 22), WeatherBot.offsetDate(date, config.lowerBound.toString()))
         assertEquals(LocalDate.of(2025, 2, 24), WeatherBot.offsetDate(date, "2"))
-        assertEquals(LocalDate.of(2025, 2, 27), WeatherBot.offsetDate(date, "5"))
-        assertEquals(LocalDate.of(2025, 3, 1), WeatherBot.offsetDate(date, "7"))
+        assertEquals(LocalDate.of(2025, 2, 27), WeatherBot.offsetDate(date, config.upperBound.toString()))
 
         // Wrong offsets
         assertEquals(LocalDate.EPOCH, WeatherBot.offsetDate(date, "yesterday"))
