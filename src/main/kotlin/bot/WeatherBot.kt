@@ -179,9 +179,8 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
     fun defaultCommand(): Ability {
         return Ability.builder()
             .name(DEFAULT)
-            .info("Handles text messages")
             .flag(Predicates.alwaysTrue())
-            .privacy(Privacy.ADMIN)
+            .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
             .action { ctx ->
                 val message = """This bot works only with commands. To check them, use /commands or /help"""
