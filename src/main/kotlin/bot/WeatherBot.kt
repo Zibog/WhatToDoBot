@@ -168,7 +168,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                     |Optional commands (no arguments needed):
                     |/restart drops your location
                     |/help shows this instruction :)
-                    |/command lists you with supported commands with short descriptions
+                    |/commands lists you with supported commands with short descriptions
                 """.trimMargin()
                 silent.sendMd(message, ctx.chatId())
             }
