@@ -65,9 +65,8 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
             .info("Request weather for the day")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
-            .input(1)
             .action { ctx ->
-                val inputArg = ctx.arguments()[0]
+                val inputArg = ctx.arguments().getOrElse(0) { "today" }
 
                 log.debug { "Going to parse arg=$inputArg" }
                 val dateWithOffset = offsetDate(LocalDate.now(), inputArg)
@@ -148,6 +147,35 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
     }
 
     @Suppress("unused")
+    fun helpCommand(): Ability {
+        return Ability.builder()
+            .name("help")
+            .info("Shows the list of available commands")
+            .privacy(Privacy.PUBLIC)
+            .locality(Locality.ALL)
+            .action { ctx ->
+                val message = """
+                    |How to use this bot?
+                    |
+                    |1. Set your location using `/location <city>`
+                    |This command is also used to update location.
+                    |Examples: `/location Sofia`, `/location Moscow`
+                    |2. Request weather for the day using `/weather <offset>`
+                    |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
+                    |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.
+                    |Examples: `/weather 0`, `/weather today`, `/weather tomorrow`, `/weather 3`
+                    |
+                    |Optional commands (no arguments needed):
+                    |/restart drops your location
+                    |/help shows this instruction :)
+                    |/commands lists you with supported commands with short descriptions
+                """.trimMargin()
+                silent.sendMd(message, ctx.chatId())
+            }
+            .build()
+    }
+
+    @Suppress("unused")
     fun defaultCommand(): Ability {
         return Ability.builder()
             .name(DEFAULT)
@@ -155,7 +183,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
             .action { ctx ->
-                val message = """This bot works only with commands. To check them, use `/commands` or `/help`"""
+                val message = """This bot works only with commands. To check them, use /commands or /help"""
                 silent.sendMd(message, ctx.chatId())
             }
             .build()
