@@ -147,7 +147,7 @@ class WeatherBotTest {
             |This command is also used to update location.
             |Examples: `/location Sofia`, `/location Moscow`
             |2. Request weather for the day using `/weather <offset>`
-            |The offset can be a number from 0 to 5, `today` or `tomorrow`, where `today` is the default value.
+            |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
             |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.
             |Examples: `/weather 0`, `/weather today`, `/weather tomorrow`, `/weather 3`
             |
