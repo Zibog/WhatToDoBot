@@ -65,9 +65,8 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
             .info("Request weather for the day")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
-            .input(1)
             .action { ctx ->
-                val inputArg = ctx.arguments()[0]
+                val inputArg = ctx.arguments().getOrElse(0) { "today" }
 
                 log.debug { "Going to parse arg=$inputArg" }
                 val dateWithOffset = offsetDate(LocalDate.now(), inputArg)

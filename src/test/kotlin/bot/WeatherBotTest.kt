@@ -79,14 +79,13 @@ class WeatherBotTest {
     }
 
     @Test
-    fun testWeatherCommand_wrongArgumentsNumber() {
-        val zeroArgUpdate = mockFullUpdate("/weather")
-        bot.consume(zeroArgUpdate)
-        verify(sender, times(1)).send("Sorry, this feature requires 1 additional input.", USER.id)
+    fun testWeatherCommand_defaultValue() {
+        val updateLocation = mockFullUpdate("/location Sofia")
+        bot.consume(updateLocation)
 
-        val multipleArgsUpdate = mockFullUpdate("/weather 1 2 3")
-        bot.consume(multipleArgsUpdate)
-        verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", USER.id)
+        val update = mockFullUpdate("/weather")
+        bot.consume(update)
+        verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(USER.id))
     }
 
     @Test
@@ -107,6 +106,10 @@ class WeatherBotTest {
         val invalidArgUpdate4 = mockFullUpdate("/weather $outOfBound")
         bot.consume(invalidArgUpdate4)
         verify(sender, times(1)).send("Invalid argument '$outOfBound'. Please, provide valid offset", USER.id)
+
+        val multipleArgsUpdate = mockFullUpdate("/weather 9 9 9")
+        bot.consume(multipleArgsUpdate)
+        verify(sender, times(1)).send("Invalid argument '9'. Please, provide valid offset", USER.id)
     }
 
     @Test
