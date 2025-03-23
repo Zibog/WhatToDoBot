@@ -7,7 +7,8 @@ weather:
 
 # is intended to ALWAYS be zero
 lowerBound: 0
-upperBound: 7
+# 5 days is the maximum forecast on free plan
+upperBound: 5
 
 database:
   dbHost: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
