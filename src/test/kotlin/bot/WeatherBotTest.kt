@@ -7,7 +7,6 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.*
 import org.telegram.telegrambots.abilitybots.api.db.DBContext
 import org.telegram.telegrambots.abilitybots.api.db.MapDBContext
-import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.abilitybots.api.sender.SilentSender
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -44,22 +43,6 @@ class WeatherBotTest {
     @AfterTest
     fun tearDown() {
         db.clear()
-    }
-
-    @Test
-    fun testHelloWorldCommand() {
-        val update = Update()
-        // Create a new User
-        val user = User(USER_ID, FIRST_NAME, false)
-        // Context is a necessary consumer item for the ability
-        val context = MessageContext.newContext(update, user, CHAT_ID, bot)
-
-        // Consume a context in the lambda declaration, so we pass the context to the action logic
-        bot.helloWorldCommand().action().accept(context)
-
-        // We verify that the silent sender was called only ONCE and sent Hello World to CHAT_ID
-        // The silent sender here is a mock!
-        verify(sender, times(1)).send("Hello world!", CHAT_ID)
     }
 
     @Test
@@ -136,6 +119,23 @@ class WeatherBotTest {
         val multipleArgsUpdate = mockFullUpdate("/location Tut Tam")
         bot.consume(multipleArgsUpdate)
         verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", USER.id)
+    }
+
+    @Test
+    fun testRestartCommand() {
+        val restartUpdate = mockFullUpdate("/restart")
+        bot.consume(restartUpdate)
+        verify(sender, times(1)).send("No location was set", USER.id)
+
+        val updateLocation = mockFullUpdate("/location Sofia")
+        bot.consume(updateLocation)
+        val restartUpdate2 = mockFullUpdate("/restart")
+        bot.consume(restartUpdate2)
+        verify(sender, times(1)).send("Location dropped from Sofia", USER.id)
+
+        val restartUpdate3 = mockFullUpdate("/restart")
+        bot.consume(restartUpdate3)
+        verify(sender, times(2)).send("No location was set", USER.id)
     }
 
     @Test
@@ -216,13 +216,6 @@ class WeatherBotTest {
     }
 
     companion object {
-        // User-specific constants
-        private const val USER_ID = 666L
-        private const val FIRST_NAME = "Abobus"
-
-        // Chat-specific constants
-        private const val CHAT_ID = 666L
-
         // Bot-specific constants
         private const val TOKEN = "TOKEN"
         private const val BOT_USERNAME = "TestBot"
