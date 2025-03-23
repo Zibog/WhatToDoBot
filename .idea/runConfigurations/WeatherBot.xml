@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="WeatherBot" type="JetRunConfigurationType">
+    <option name="MAIN_CLASS_NAME" value="com.dsidak.MainKt" />
+    <module name="WhatToDoBot.main" />
+    <shortenClasspath name="NONE" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
