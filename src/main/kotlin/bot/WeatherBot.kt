@@ -147,6 +147,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
         return Optional.ofNullable(locations.put(userId, location))
     }
 
+    @Suppress("unused")
     fun helpCommand(): Ability {
         return Ability.builder()
             .name("help")
@@ -169,7 +170,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                     |/restart drops your location
                     |/help shows this instruction :)
                     |/command lists you with supported commands with short descriptions
-                """.trimIndent()
+                """.trimMargin()
                 silent.sendMd(message, ctx.chatId())
             }
             .build()
