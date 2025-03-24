@@ -2,6 +2,7 @@ package com.dsidak.bot
 
 import com.dsidak.configuration.config
 import com.dsidak.dotenv
+import com.dsidak.geocoding.Geocoding
 import com.dsidak.weather.Fetcher
 import com.google.common.base.Predicates
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -98,6 +99,16 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
             .action { ctx ->
                 val inputArg = ctx.arguments()[0]
                 log.debug { "Received location=$inputArg" }
+                // TODO: check if the location is already in DB
+                val coordinates = try {
+                    Geocoding().fetchCoordinates(inputArg)
+                } catch (e: Exception) {
+                    log.info(e) { "Cannot parse the location: $inputArg" }
+                    silent.send("Cannot parse the location: $inputArg", ctx.chatId())
+                    return@action
+                }
+                log.info { "Checked geolocation of $inputArg: $coordinates" }
+                // TODO: save coordinates to the database
                 val previousLocation = updateLocation(ctx.user().id, inputArg)
                 if (previousLocation.isEmpty) {
                     silent.send("Location set to $inputArg", ctx.chatId())

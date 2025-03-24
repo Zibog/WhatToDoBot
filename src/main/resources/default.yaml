@@ -4,6 +4,7 @@ weather:
   weatherForecast: forecast
   weatherCurrent: weather
   weatherUnits: metric
+  geoPath: geo/1.0/direct
 
 # is intended to ALWAYS be zero
 lowerBound: 0

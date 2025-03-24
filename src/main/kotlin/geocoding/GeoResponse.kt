@@ -13,5 +13,5 @@ data class CityInfo(
     @SerialName("lon")
     val longitude: Double,
     val country: String,
-    val state: String
+    val state: String = ""
 )
