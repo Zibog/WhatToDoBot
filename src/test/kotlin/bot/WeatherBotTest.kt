@@ -49,7 +49,7 @@ class WeatherBotTest {
     fun testWeather() {
         val update = mockFullUpdate("/weather today")
         bot.consume(update)
-        verify(sender, times(1)).send("Please, provide your location first using /location <city>", USER.id)
+        verify(sender, times(1)).send("Please, provide your location first using /location <city>, [country]", USER.id)
 
         val updateLocation = mockFullUpdate("/location Sofia")
         bot.consume(updateLocation)
@@ -138,7 +138,7 @@ class WeatherBotTest {
 
     @Test
     fun testLocationCommand_setCityWithCountry() {
-        val update = mockFullUpdate("/location Sofia,BG")
+        val update = mockFullUpdate("/location Sofia, BG")
         bot.consume(update)
         verify(
             sender,
@@ -195,9 +195,10 @@ class WeatherBotTest {
             """
             |How to use this bot?
             |
-            |1. Set your location using `/location <city>`
+            |1. Set your location using `/location <city>, [country]`
             |This command is also used to update location.
-            |Examples: `/location Sofia`, `/location Moscow`
+            |The country is optional and should be a two-letter-length code.
+            |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
             |2. Request weather for the day using `/weather <offset>`
             |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
             |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.

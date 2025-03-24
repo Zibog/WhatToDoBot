@@ -65,7 +65,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                 log.debug { "Check the weather for $dateWithOffset" }
                 val location = readLocation(ctx.user().id)
                 if (location.isEmpty) {
-                    silent.send("Please, provide your location first using /location <city>", ctx.chatId())
+                    silent.send("Please, provide your location first using /location <city>, [country]", ctx.chatId())
                     return@action
                 }
 
@@ -187,9 +187,10 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                 val message = """
                     |How to use this bot?
                     |
-                    |1. Set your location using `/location <city>`
+                    |1. Set your location using `/location <city>, [country]`
                     |This command is also used to update location.
-                    |Examples: `/location Sofia`, `/location Moscow`
+                    |The country is optional and should be a two-letter-length code.
+                    |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
                     |2. Request weather for the day using `/weather <offset>`
                     |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
                     |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.
