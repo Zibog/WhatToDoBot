@@ -137,6 +137,19 @@ class WeatherBotTest {
     }
 
     @Test
+    fun testLocationCommand_setCityWithCountry() {
+        val update = mockFullUpdate("/location Sofia,BG")
+        bot.consume(update)
+        verify(
+            sender,
+            times(1)
+        ).send(
+            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            USER.id
+        )
+    }
+
+    @Test
     fun testLocationCommand_wrongArgumentsNumber() {
         val zeroArgUpdate = mockFullUpdate("/location")
         bot.consume(zeroArgUpdate)

@@ -110,7 +110,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                 }
                 log.debug { "Received location=$city, $country" }
                 // TODO: check if the location is already in DB
-                val cityInfo = Geocoding().fetchCoordinates(city)
+                val cityInfo = Geocoding().fetchCoordinates(city, country)
                 if (cityInfo == CityInfo.EMPTY) {
                     silent.send("No results found for the city $city. Try to specify the country", ctx.chatId())
                     return@action

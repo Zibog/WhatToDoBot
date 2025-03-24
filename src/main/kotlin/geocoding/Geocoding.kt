@@ -15,8 +15,8 @@ class Geocoding(private val httpClient: OkHttpClient = OkHttpClient().newBuilder
     private val log = KotlinLogging.logger {}
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun fetchCoordinates(city: String): CityInfo {
-        val url = toUrl(city)
+    fun fetchCoordinates(city: String, country: String): CityInfo {
+        val url = toUrl(city, country)
 
         val request = Request.Builder()
             .url(url)
@@ -66,12 +66,17 @@ class Geocoding(private val httpClient: OkHttpClient = OkHttpClient().newBuilder
     }
 
     companion object {
-        internal fun toUrl(city: String, limit: Int = 1): HttpUrl {
+        internal fun toUrl(city: String, country: String = "", limit: Int = 1): HttpUrl {
+            val location = if (country.isNotEmpty()) {
+                "$city,$country"
+            } else {
+                city
+            }
             val builder = HttpUrl.Builder()
                 .scheme("https")
                 .host(config.weather.weatherHost)
                 .addPathSegments(config.weather.geoPath)
-                .addQueryParameter("q", city)
+                .addQueryParameter("q", location)
                 .addQueryParameter("limit", limit.toString())
                 .addQueryParameter("appid", dotenv["WEATHER_API_KEY"])
 

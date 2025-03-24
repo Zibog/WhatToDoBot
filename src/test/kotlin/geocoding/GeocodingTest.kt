@@ -11,8 +11,29 @@ class GeocodingTest {
     private val geocoding = Geocoding()
 
     @Test
-    fun testExecuteRequest() {
+    fun testExecuteRequest_onlyCity() {
         val url = Geocoding.toUrl("Sofia")
+        val request = Request.Builder()
+            .url(url)
+            .header("charset", StandardCharsets.UTF_8.name())
+            .get()
+            .build()
+
+        val response = geocoding.executeRequest(request)
+
+        assert(response.isRight())
+        val geoResponse = response.getOrNull()
+        assertNotNull(geoResponse)
+        val firstCity = geoResponse[0]
+        assertEquals("Sofia", firstCity.name)
+        assertEquals(42.6977028, firstCity.latitude)
+        assertEquals(23.3217359, firstCity.longitude)
+        assertEquals("BG", firstCity.country)
+    }
+
+    @Test
+    fun testExecuteRequest_withCountry() {
+        val url = Geocoding.toUrl("Sofia", "BG")
         val request = Request.Builder()
             .url(url)
             .header("charset", StandardCharsets.UTF_8.name())
