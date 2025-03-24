@@ -49,11 +49,17 @@ class WeatherBotTest {
     fun testWeather() {
         val update = mockFullUpdate("/weather today")
         bot.consume(update)
-        verify(sender, times(1)).send("Please, provide your location first using /location <city>", USER.id)
+        verify(sender, times(1)).send("Please, provide your location first using /location <city>, [country]", USER.id)
 
         val updateLocation = mockFullUpdate("/location Sofia")
         bot.consume(updateLocation)
-        verify(sender, times(1)).send("Location set to Sofia", USER.id)
+        verify(
+            sender,
+            times(1)
+        ).send(
+            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            USER.id
+        )
 
         // Try to ask again with city set
         bot.consume(update)
@@ -99,26 +105,69 @@ class WeatherBotTest {
     fun testLocationCommand_setThenUpdateLocation() {
         val update = mockFullUpdate("/location Sofia")
         bot.consume(update)
-        verify(sender, times(1)).send("Location set to Sofia", USER.id)
+        verify(
+            sender,
+            times(1)
+        ).send(
+            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            USER.id
+        )
 
         val update2 = mockFullUpdate("/location Plovdiv")
         bot.consume(update2)
         verify(sender, times(1)).send("Location updated from Sofia to Plovdiv", USER.id)
+        verify(
+            sender,
+            times(1)
+        ).send(
+            "Location is set to Plovdiv, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            USER.id
+        )
 
         val update3 = mockFullUpdate("/location Tbilisi")
         bot.consume(update3)
         verify(sender, times(1)).send("Location updated from Plovdiv to Tbilisi", USER.id)
+        verify(
+            sender,
+            times(1)
+        ).send(
+            "Location is set to Tbilisi, GE. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            USER.id
+        )
+    }
+
+    @Test
+    fun testLocationCommand_setCityWithCountry() {
+        val update = mockFullUpdate("/location Sofia, BG")
+        bot.consume(update)
+        verify(
+            sender,
+            times(1)
+        ).send(
+            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            USER.id
+        )
     }
 
     @Test
     fun testLocationCommand_wrongArgumentsNumber() {
         val zeroArgUpdate = mockFullUpdate("/location")
         bot.consume(zeroArgUpdate)
-        verify(sender, times(1)).send("Sorry, this feature requires 1 additional input.", USER.id)
+        verify(sender, times(1)).send("Sorry, this feature requires 1 or 2 additional inputs.", USER.id)
 
-        val multipleArgsUpdate = mockFullUpdate("/location Tut Tam")
+        val multipleArgsUpdate = mockFullUpdate("/location Tut Tam Sam")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", USER.id)
+        verify(sender, times(2)).send("Sorry, this feature requires 1 or 2 additional inputs.", USER.id)
+    }
+
+    @Test
+    fun testLocationCommand_nonexistentCity() {
+        val update = mockFullUpdate("/location NonexistentCity")
+        bot.consume(update)
+        verify(sender, times(1)).send(
+            "No results found for the city NonexistentCity. Try to specify the country",
+            USER.id
+        )
     }
 
     @Test
@@ -146,9 +195,10 @@ class WeatherBotTest {
             """
             |How to use this bot?
             |
-            |1. Set your location using `/location <city>`
+            |1. Set your location using `/location <city>, [country]`
             |This command is also used to update location.
-            |Examples: `/location Sofia`, `/location Moscow`
+            |The country is optional and should be a two-letter-length code.
+            |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
             |2. Request weather for the day using `/weather <offset>`
             |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
             |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.

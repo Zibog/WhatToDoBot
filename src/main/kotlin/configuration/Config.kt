@@ -28,7 +28,8 @@ data class Weather(
     val weatherPath: String,
     val weatherForecast: String,
     val weatherCurrent: String,
-    val weatherUnits: String
+    val weatherUnits: String,
+    val geoPath: String
 )
 
 data class Database(

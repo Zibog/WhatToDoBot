@@ -2,6 +2,8 @@ package com.dsidak.bot
 
 import com.dsidak.configuration.config
 import com.dsidak.dotenv
+import com.dsidak.geocoding.CityInfo
+import com.dsidak.geocoding.Geocoding
 import com.dsidak.weather.Fetcher
 import com.google.common.base.Predicates
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -63,7 +65,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                 log.debug { "Check the weather for $dateWithOffset" }
                 val location = readLocation(ctx.user().id)
                 if (location.isEmpty) {
-                    silent.send("Please, provide your location first using /location <city>", ctx.chatId())
+                    silent.send("Please, provide your location first using /location <city>, [country]", ctx.chatId())
                     return@action
                 }
 
@@ -94,15 +96,35 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
             .info("Set location for the request")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
-            .input(1)
             .action { ctx ->
-                val inputArg = ctx.arguments()[0]
-                log.debug { "Received location=$inputArg" }
-                val previousLocation = updateLocation(ctx.user().id, inputArg)
-                if (previousLocation.isEmpty) {
-                    silent.send("Location set to $inputArg", ctx.chatId())
+                if (ctx.arguments().isEmpty()) {
+                    silent.send("Sorry, this feature requires 1 or 2 additional inputs.", ctx.chatId())
+                    return@action
+                }
+                val city = ctx.arguments()[0]
+                val country = if (ctx.arguments().size == 2) {
+                    ctx.arguments()[1]
                 } else {
-                    silent.send("Location updated from ${previousLocation.get()} to $inputArg", ctx.chatId())
+                    silent.send("Sorry, this feature requires 1 or 2 additional inputs.", ctx.chatId())
+                    ""
+                }
+                log.debug { "Received location=$city, $country" }
+                // TODO: check if the location is already in DB
+                val cityInfo = Geocoding().fetchCoordinates(city, country)
+                if (cityInfo == CityInfo.EMPTY) {
+                    silent.send("No results found for the city $city. Try to specify the country", ctx.chatId())
+                    return@action
+                }
+                log.info { "Checked geolocation of $city: $cityInfo" }
+                // TODO: save coordinates and country to the database
+                val previousLocation = updateLocation(ctx.user().id, cityInfo.name)
+                val helperMessage =
+                    "Location is set to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, please state city and two-letter-length country code separated by comma."
+                if (previousLocation.isEmpty) {
+                    silent.send(helperMessage, ctx.chatId())
+                } else {
+                    silent.send("Location updated from ${previousLocation.get()} to $city", ctx.chatId())
+                    silent.send(helperMessage, ctx.chatId())
                 }
             }
             .build()
@@ -165,9 +187,10 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                 val message = """
                     |How to use this bot?
                     |
-                    |1. Set your location using `/location <city>`
+                    |1. Set your location using `/location <city>, [country]`
                     |This command is also used to update location.
-                    |Examples: `/location Sofia`, `/location Moscow`
+                    |The country is optional and should be a two-letter-length code.
+                    |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
                     |2. Request weather for the day using `/weather <offset>`
                     |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
                     |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.
