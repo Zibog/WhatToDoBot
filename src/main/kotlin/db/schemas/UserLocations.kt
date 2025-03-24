@@ -1,7 +1,10 @@
 package com.dsidak.db.schemas
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -9,56 +12,54 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 @Serializable
 data class UserLocation(
-    val userId: Int,
-    val locationId: Int
+    val userId: Long,
+    @Contextual
+    val locationId: EntityID<Long>
 )
 
 class UserLocationService(db: Database) {
-    object UserLocations : Table() {
-        val id = integer("id").autoIncrement()
-        val userId = reference("user_id", UserService.Users.id)
-        val locationId = reference("location_id", LocationService.Locations.id)
-
-        override val primaryKey = PrimaryKey(id)
+    object UserLocationsTable : LongIdTable() {
+        val userId = reference("user_id", UserService.UsersTable.id)
+        val locationId = reference("location_id", LocationService.LocationsTable.id)
     }
 
     init {
         transaction(db) {
-            SchemaUtils.create(UserLocations)
+            SchemaUtils.create(UserLocationsTable)
         }
     }
 
     private suspend fun <T> dbQuery(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }
 
-    suspend fun create(userLocation: UserLocation): Int = dbQuery {
-        UserLocations.insert {
+    suspend fun create(userLocation: UserLocation): EntityID<Long> = dbQuery {
+        UserLocationsTable.insert {
             it[userId] = userLocation.userId
             it[locationId] = userLocation.locationId
-        }[UserLocations.id]
+        }[UserLocationsTable.id]
     }
 
-    suspend fun read(id: Int): UserLocation? {
+    suspend fun read(id: EntityID<Long>): UserLocation? {
         return dbQuery {
-            UserLocations.selectAll()
-                .where { UserLocations.id eq id }
-                .map { UserLocation(it[UserLocations.userId], it[UserLocations.locationId]) }
+            UserLocationsTable.selectAll()
+                .where { UserLocationsTable.id eq id }
+                .map { UserLocation(it[UserLocationsTable.userId], it[UserLocationsTable.locationId]) }
                 .singleOrNull()
         }
     }
 
-    suspend fun update(id: Int, userLocation: UserLocation) {
+    suspend fun update(id: EntityID<Long>, userLocation: UserLocation) {
         dbQuery {
-            UserLocations.update({ UserLocations.id eq id }) {
+            UserLocationsTable.update({ UserLocationsTable.id eq id }) {
                 it[userId] = userLocation.userId
                 it[locationId] = userLocation.locationId
             }
         }
     }
 
-    suspend fun delete(id: Int) {
+    suspend fun delete(id: EntityID<Long>) {
         dbQuery {
-            UserLocations.deleteWhere { UserLocations.id.eq(id) }
+            UserLocationsTable.deleteWhere { UserLocationsTable.id.eq(id) }
         }
     }
 }

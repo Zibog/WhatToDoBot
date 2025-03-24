@@ -2,6 +2,8 @@ package com.dsidak.db.schemas
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -16,44 +18,41 @@ data class Location(
 )
 
 class LocationService(db: Database) {
-    object Locations : Table() {
-        val id = integer("id").autoIncrement()
+    object LocationsTable : LongIdTable() {
         val city = varchar("city", 50)
-        val country = varchar("country", 50)
+        val country = varchar("country", 2)
         val latitude = double("latitude")
         val longitude = double("longitude")
-
-        override val primaryKey = PrimaryKey(id)
     }
 
     init {
         transaction(db) {
-            SchemaUtils.create(Locations)
+            SchemaUtils.create(LocationsTable)
         }
     }
 
     private suspend fun <T> dbQuery(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }
 
-    suspend fun create(location: Location): Int = dbQuery {
-        Locations.insert {
+    suspend fun create(location: Location): EntityID<Long> = dbQuery {
+        LocationsTable.insert {
             it[city] = location.city
             it[country] = location.country
             it[latitude] = location.latitude
             it[longitude] = location.longitude
-        }[Locations.id]
+        }[LocationsTable.id]
     }
 
-    suspend fun read(id: Int): Location? {
+    suspend fun read(id: EntityID<Long>): Location? {
         return dbQuery {
-            Locations.selectAll()
-                .where { Locations.id eq id }
+            LocationsTable.selectAll()
+                .where { LocationsTable.id eq id }
                 .map {
                     Location(
-                        it[Locations.city],
-                        it[Locations.country],
-                        it[Locations.latitude],
-                        it[Locations.longitude]
+                        it[LocationsTable.city],
+                        it[LocationsTable.country],
+                        it[LocationsTable.latitude],
+                        it[LocationsTable.longitude]
                     )
                 }
                 .singleOrNull()
@@ -62,24 +61,24 @@ class LocationService(db: Database) {
 
     suspend fun readByCity(city: String): Location? {
         return dbQuery {
-            Locations.selectAll()
-                .where { Locations.city eq city }
+            LocationsTable.selectAll()
+                .where { LocationsTable.city eq city }
                 .limit(1)
                 .map {
                     Location(
-                        it[Locations.city],
-                        it[Locations.country],
-                        it[Locations.latitude],
-                        it[Locations.longitude]
+                        it[LocationsTable.city],
+                        it[LocationsTable.country],
+                        it[LocationsTable.latitude],
+                        it[LocationsTable.longitude]
                     )
                 }
                 .singleOrNull()
         }
     }
 
-    suspend fun update(id: Int, location: Location) {
+    suspend fun update(id: EntityID<Long>, location: Location) {
         dbQuery {
-            Locations.update({ Locations.id eq id }) {
+            LocationsTable.update({ LocationsTable.id eq id }) {
                 it[city] = location.city
                 it[country] = location.country
                 it[latitude] = location.latitude
@@ -88,9 +87,9 @@ class LocationService(db: Database) {
         }
     }
 
-    suspend fun delete(id: Int) {
+    suspend fun delete(id: EntityID<Long>) {
         dbQuery {
-            Locations.deleteWhere { Locations.id.eq(id) }
+            LocationsTable.deleteWhere { LocationsTable.id.eq(id) }
         }
     }
 }
