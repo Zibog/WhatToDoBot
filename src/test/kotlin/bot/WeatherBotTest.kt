@@ -53,7 +53,13 @@ class WeatherBotTest {
 
         val updateLocation = mockFullUpdate("/location Sofia")
         bot.consume(updateLocation)
-        verify(sender, times(1)).send("Location set to Sofia", USER.id)
+        verify(
+            sender,
+            times(1)
+        ).send(
+            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            USER.id
+        )
 
         // Try to ask again with city set
         bot.consume(update)
@@ -99,26 +105,56 @@ class WeatherBotTest {
     fun testLocationCommand_setThenUpdateLocation() {
         val update = mockFullUpdate("/location Sofia")
         bot.consume(update)
-        verify(sender, times(1)).send("Location set to Sofia", USER.id)
+        verify(
+            sender,
+            times(1)
+        ).send(
+            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            USER.id
+        )
 
         val update2 = mockFullUpdate("/location Plovdiv")
         bot.consume(update2)
         verify(sender, times(1)).send("Location updated from Sofia to Plovdiv", USER.id)
+        verify(
+            sender,
+            times(1)
+        ).send(
+            "Location is set to Plovdiv, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            USER.id
+        )
 
         val update3 = mockFullUpdate("/location Tbilisi")
         bot.consume(update3)
         verify(sender, times(1)).send("Location updated from Plovdiv to Tbilisi", USER.id)
+        verify(
+            sender,
+            times(1)
+        ).send(
+            "Location is set to Tbilisi, GE. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            USER.id
+        )
     }
 
     @Test
     fun testLocationCommand_wrongArgumentsNumber() {
         val zeroArgUpdate = mockFullUpdate("/location")
         bot.consume(zeroArgUpdate)
-        verify(sender, times(1)).send("Sorry, this feature requires 1 additional input.", USER.id)
+        verify(sender, times(1)).send("Sorry, this feature requires 1 or 2 additional inputs.", USER.id)
 
-        val multipleArgsUpdate = mockFullUpdate("/location Tut Tam")
+        val multipleArgsUpdate = mockFullUpdate("/location Tut Tam Sam")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(2)).send("Sorry, this feature requires 1 additional input.", USER.id)
+        verify(sender, times(2)).send("Sorry, this feature requires 1 or 2 additional inputs.", USER.id)
+    }
+
+    @Test
+    fun testLocationCommand_nonexistentCity() {
+        val update = mockFullUpdate("/location NonexistentCity")
+        bot.consume(update)
+        verify(sender, times(1)).send(
+            "No results found for the city NonexistentCity. Try to specify the country",
+            USER.id
+        )
     }
 
     @Test

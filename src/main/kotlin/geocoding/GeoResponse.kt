@@ -14,4 +14,8 @@ data class CityInfo(
     val longitude: Double,
     val country: String,
     val state: String = ""
-)
+) {
+    companion object {
+        val EMPTY = CityInfo("", emptyMap(), 0.0, 0.0, "")
+    }
+}

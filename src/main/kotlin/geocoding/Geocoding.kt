@@ -3,7 +3,6 @@ package com.dsidak.geocoding
 import arrow.core.Either
 import com.dsidak.configuration.config
 import com.dsidak.dotenv
-import com.dsidak.weather.Coordinates
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl
@@ -16,7 +15,7 @@ class Geocoding(private val httpClient: OkHttpClient = OkHttpClient().newBuilder
     private val log = KotlinLogging.logger {}
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun fetchCoordinates(city: String): Coordinates {
+    fun fetchCoordinates(city: String): CityInfo {
         val url = toUrl(city)
 
         val request = Request.Builder()
@@ -29,13 +28,13 @@ class Geocoding(private val httpClient: OkHttpClient = OkHttpClient().newBuilder
             { errorDescription: String ->
                 // TODO: no real reason to just log this message
                 log.error { errorDescription }
-                return Coordinates(0.0, 0.0)
+                return CityInfo.EMPTY
             },
             { response: List<CityInfo> -> return@fold response }
         )
 
         // TODO: suggest to user to choose city if there are multiple results
-        return Coordinates(response[0].latitude, response[0].longitude)
+        return response[0]
     }
 
     internal fun executeRequest(request: Request): Either<String, List<CityInfo>> {

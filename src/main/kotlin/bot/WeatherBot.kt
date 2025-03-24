@@ -2,6 +2,7 @@ package com.dsidak.bot
 
 import com.dsidak.configuration.config
 import com.dsidak.dotenv
+import com.dsidak.geocoding.CityInfo
 import com.dsidak.geocoding.Geocoding
 import com.dsidak.weather.Fetcher
 import com.google.common.base.Predicates
@@ -95,25 +96,35 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
             .info("Set location for the request")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
-            .input(1)
             .action { ctx ->
-                val inputArg = ctx.arguments()[0]
-                log.debug { "Received location=$inputArg" }
-                // TODO: check if the location is already in DB
-                val coordinates = try {
-                    Geocoding().fetchCoordinates(inputArg)
-                } catch (e: Exception) {
-                    log.info(e) { "Cannot parse the location: $inputArg" }
-                    silent.send("Cannot parse the location: $inputArg", ctx.chatId())
+                if (ctx.arguments().isEmpty()) {
+                    silent.send("Sorry, this feature requires 1 or 2 additional inputs.", ctx.chatId())
                     return@action
                 }
-                log.info { "Checked geolocation of $inputArg: $coordinates" }
-                // TODO: save coordinates to the database
-                val previousLocation = updateLocation(ctx.user().id, inputArg)
-                if (previousLocation.isEmpty) {
-                    silent.send("Location set to $inputArg", ctx.chatId())
+                val city = ctx.arguments()[0]
+                val country = if (ctx.arguments().size == 2) {
+                    ctx.arguments()[1]
                 } else {
-                    silent.send("Location updated from ${previousLocation.get()} to $inputArg", ctx.chatId())
+                    silent.send("Sorry, this feature requires 1 or 2 additional inputs.", ctx.chatId())
+                    ""
+                }
+                log.debug { "Received location=$city, $country" }
+                // TODO: check if the location is already in DB
+                val cityInfo = Geocoding().fetchCoordinates(city)
+                if (cityInfo == CityInfo.EMPTY) {
+                    silent.send("No results found for the city $city. Try to specify the country", ctx.chatId())
+                    return@action
+                }
+                log.info { "Checked geolocation of $city: $cityInfo" }
+                // TODO: save coordinates and country to the database
+                val previousLocation = updateLocation(ctx.user().id, cityInfo.name)
+                val helperMessage =
+                    "Location is set to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, please state city and two-letter-length country code separated by comma."
+                if (previousLocation.isEmpty) {
+                    silent.send(helperMessage, ctx.chatId())
+                } else {
+                    silent.send("Location updated from ${previousLocation.get()} to $city", ctx.chatId())
+                    silent.send(helperMessage, ctx.chatId())
                 }
             }
             .build()
