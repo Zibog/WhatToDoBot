@@ -9,16 +9,16 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 @Serializable
 data class User(
-    val id: Long,
+    val id: Int,
     val firstName: String,
     val lastName: String?,
     val userName: String
 )
 
 class UserService(db: Database) {
-    object UsersTable : Table() {
+    object Users : Table() {
         // Telegram user id
-        val id = long("id")
+        val id = integer("id")
         val firstName = varchar("first_name", 50)
         val lastName = varchar("last_name", 50).nullable()
         val userName = varchar("user_name", 50)
@@ -28,41 +28,34 @@ class UserService(db: Database) {
 
     init {
         transaction(db) {
-            SchemaUtils.create(UsersTable)
+            SchemaUtils.create(Users)
         }
     }
 
     private suspend fun <T> dbQuery(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }
 
-    suspend fun create(user: User): Long = dbQuery {
-        UsersTable.insert {
+    suspend fun create(user: User): Int = dbQuery {
+        Users.insert {
             it[id] = user.id
             it[firstName] = user.firstName
             it[lastName] = user.lastName
             it[userName] = user.userName
-        }[UsersTable.id]
+        }[Users.id]
     }
 
-    suspend fun read(id: Long): User? {
+    suspend fun read(id: Int): User? {
         return dbQuery {
-            UsersTable.selectAll()
-                .where { UsersTable.id eq id }
-                .map {
-                    User(
-                        it[UsersTable.id],
-                        it[UsersTable.firstName],
-                        it[UsersTable.lastName],
-                        it[UsersTable.userName]
-                    )
-                }
+            Users.selectAll()
+                .where { Users.id eq id }
+                .map { User(it[Users.id], it[Users.firstName], it[Users.lastName], it[Users.userName]) }
                 .singleOrNull()
         }
     }
 
-    suspend fun update(id: Long, user: User) {
+    suspend fun update(id: Int, user: User) {
         dbQuery {
-            UsersTable.update({ UsersTable.id eq id }) {
+            Users.update({ Users.id eq id }) {
                 it[firstName] = user.firstName
                 it[lastName] = user.lastName
                 it[userName] = user.userName
@@ -70,9 +63,9 @@ class UserService(db: Database) {
         }
     }
 
-    suspend fun delete(id: Long) {
+    suspend fun delete(id: Int) {
         dbQuery {
-            UsersTable.deleteWhere { UsersTable.id.eq(id) }
+            Users.deleteWhere { Users.id.eq(id) }
         }
     }
 }

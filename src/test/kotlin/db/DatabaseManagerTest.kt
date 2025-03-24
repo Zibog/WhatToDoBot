@@ -11,14 +11,14 @@ import kotlin.test.assertEquals
 
 class DatabaseManagerTest {
     private val userToCreate = User(
-        id = Random.nextLong(),
+        id = Random.nextInt(),
         firstName = "first",
         lastName = null,
         userName = "userName"
     )
     private val locationToCreate = Location(
         city = "New York",
-        country = "US",
+        country = "USA",
         latitude = 40.7128,
         longitude = -74.0060
     )
