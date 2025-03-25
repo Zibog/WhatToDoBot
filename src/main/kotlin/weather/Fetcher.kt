@@ -6,19 +6,22 @@ import com.dsidak.configuration.config
 import com.dsidak.db.DatabaseManager
 import com.dsidak.db.schemas.Location
 import com.dsidak.dotenv
+import com.dsidak.http.RequestExecutor
 import com.dsidak.log
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonObject
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 
-class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) {
+class Fetcher(httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) :
+    RequestExecutor<WeatherResponse>(httpClient) {
     private val log = KotlinLogging.logger {}
     private val client = Client()
     private val json = Json { ignoreUnknownKeys = true }
@@ -72,33 +75,25 @@ class Fetcher(private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
         return geminiResponse
     }
 
-    internal fun executeRequest(request: Request): Either<String, WeatherResponse> {
-        runCatching {
-            httpClient.newCall(request).execute().use { response ->
-                if (response.isSuccessful) {
-                    response.body?.use { body ->
-                        val weatherResponse = if (request.url.queryParameter("cnt") == null) {
-                            json.decodeFromString<CurrentWeatherResponse>(body.string())
-                        } else {
-                            json.decodeFromString<ForecastWeatherResponse>(body.string())
-                        }
-                        return Either.Right(weatherResponse)
-                    }
-                } else {
-                    return Either.Left("Request failed: ${response.code} ${response.message}")
-                }
-            }
-        }.onFailure {
-            val errorMessage = "Failed to execute request"
-            log.error { it.printStackTrace() }
-            return when (it) {
-                is UnknownHostException -> Either.Left("$errorMessage: can't connect to remote service")
-                else -> Either.Left("$errorMessage. ${it.message.orEmpty()}")
-            }
-        }
+    override fun parseResponse(body: String): Either<String, WeatherResponse> {
+        return try {
+            val jsonObject = json.parseToJsonElement(body).jsonObject
 
-        // Everything should be handled earlier
-        return Either.Left("Failed to execute request, try again later")
+            // Check for the presence of a field that indicates a forecast response
+            val weatherResponse = if ("list" in jsonObject) {
+                log.info { "Parsing forecast weather response" }
+                json.decodeFromJsonElement<ForecastWeatherResponse>(jsonObject)
+            } else {
+                log.info { "Parsing current weather response" }
+                json.decodeFromJsonElement<CurrentWeatherResponse>(jsonObject)
+            }
+
+            Either.Right(weatherResponse)
+        } catch (e: Exception) {
+            val message = "Failed to parse weather response: ${e.message}"
+            log.error { message }
+            Either.Left(message)
+        }
     }
 
     companion object {

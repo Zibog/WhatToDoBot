@@ -73,7 +73,10 @@ class FetcherTest {
         val response = offlineFetcher.executeRequest(request)
 
         assert(response.isLeft())
-        assertEquals("Failed to execute request: can't connect to remote service", response.leftOrNull())
+        assertEquals(
+            "Failed to execute request due to: unknown error: can't connect to remote service",
+            response.leftOrNull()
+        )
     }
 
     @Test

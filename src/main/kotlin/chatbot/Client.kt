@@ -3,6 +3,7 @@ package com.dsidak.chatbot
 import arrow.core.Either
 import com.dsidak.configuration.config
 import com.dsidak.dotenv
+import com.dsidak.http.RequestExecutor
 import com.dsidak.weather.WeatherResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
@@ -10,14 +11,12 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.net.UnknownHostException
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
 class Client(
-    private val httpClient: OkHttpClient = OkHttpClient().newBuilder()
-        .callTimeout(config.requestTimeout, TimeUnit.SECONDS).build()
-) {
+    httpClient: OkHttpClient = OkHttpClient().newBuilder().callTimeout(config.requestTimeout, TimeUnit.SECONDS).build()
+) : RequestExecutor<GeminiFlashResponse>(httpClient) {
     private val log = KotlinLogging.logger {}
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -60,29 +59,15 @@ class Client(
         )
     }
 
-    private fun executeRequest(request: Request): Either<String, GeminiFlashResponse> {
-        runCatching {
-            httpClient.newCall(request).execute().use { response ->
-                if (response.isSuccessful) {
-                    response.body?.use { body ->
-                        val geminiResponse = json.decodeFromString<GeminiFlashResponse>(body.string())
-                        return Either.Right(geminiResponse)
-                    }
-                } else {
-                    return Either.Left("Request failed: ${response.code} ${response.message}")
-                }
-            }
-        }.onFailure {
-            val errorMessage = "Failed to execute request"
-            log.error { it.printStackTrace() }
-            return when (it) {
-                is UnknownHostException -> Either.Left("$errorMessage: can't connect to remote service")
-                else -> Either.Left("$errorMessage. ${it.message.orEmpty()}")
-            }
+    override fun parseResponse(body: String): Either<String, GeminiFlashResponse> {
+        return try {
+            log.info { "Parsing Gemini response" }
+            Either.Right(json.decodeFromString<GeminiFlashResponse>(body))
+        } catch (e: Exception) {
+            val message = "Failed to parse Gemini response: ${e.message}"
+            log.error { message }
+            Either.Left(message)
         }
-
-        // Everything should be handled earlier
-        return Either.Left("Failed to execute request, try again later")
     }
 
     companion object {
