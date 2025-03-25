@@ -1,6 +1,12 @@
 name: Kotlin CI
 
-on: [ push, pull_request ]
+on:
+  push:
+    branches:
+      - master # Only run build on push to master branch
+  pull_request:
+    branches:
+      - master # Only run build for pull requests targeting the master branch
 
 permissions:
   checks: write
