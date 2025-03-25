@@ -14,7 +14,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
-class Client(
+class GeminiClient(
     httpClient: OkHttpClient = OkHttpClient().newBuilder().callTimeout(config.requestTimeout, TimeUnit.SECONDS).build()
 ) : RequestExecutor<GeminiFlashResponse>(httpClient) {
     private val log = KotlinLogging.logger {}

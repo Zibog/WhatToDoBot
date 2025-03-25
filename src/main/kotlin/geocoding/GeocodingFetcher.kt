@@ -11,7 +11,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.nio.charset.StandardCharsets
 
-class Geocoding(httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) :
+class GeocodingFetcher(httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) :
     RequestExecutor<List<CityInfo>>(httpClient) {
     private val log = KotlinLogging.logger {}
     private val json = Json { ignoreUnknownKeys = true }

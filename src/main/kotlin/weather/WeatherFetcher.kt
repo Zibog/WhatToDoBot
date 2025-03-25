@@ -1,7 +1,7 @@
 package com.dsidak.weather
 
 import arrow.core.Either
-import com.dsidak.chatbot.Client
+import com.dsidak.chatbot.GeminiClient
 import com.dsidak.configuration.config
 import com.dsidak.db.DatabaseManager
 import com.dsidak.db.schemas.Location
@@ -20,10 +20,10 @@ import okhttp3.Request
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 
-class Fetcher(httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) :
+class WeatherFetcher(httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) :
     RequestExecutor<WeatherResponse>(httpClient) {
     private val log = KotlinLogging.logger {}
-    private val client = Client()
+    private val geminiClient = GeminiClient()
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
@@ -71,7 +71,7 @@ class Fetcher(httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) :
             }
         }
 
-        val geminiResponse = client.generateContent(response, date)
+        val geminiResponse = geminiClient.generateContent(response, date)
         return geminiResponse
     }
 
