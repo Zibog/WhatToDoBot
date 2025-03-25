@@ -1,10 +1,9 @@
 package com.dsidak.db.schemas
 
-import kotlinx.coroutines.Dispatchers
+import com.dsidak.db.dbQuery
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 
 @Serializable
@@ -12,7 +11,8 @@ data class User(
     val id: Long,
     val firstName: String,
     val lastName: String?,
-    val userName: String
+    val userName: String,
+    val locationId: Long? = null
 )
 
 class UserService(db: Database) {
@@ -22,6 +22,7 @@ class UserService(db: Database) {
         val firstName = varchar("first_name", 50)
         val lastName = varchar("last_name", 50).nullable()
         val userName = varchar("user_name", 50)
+        val locationId = reference("location_id", LocationService.LocationsTable.id).nullable()
 
         override val primaryKey = PrimaryKey(id)
     }
@@ -32,15 +33,13 @@ class UserService(db: Database) {
         }
     }
 
-    private suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
-
     suspend fun create(user: User): Long = dbQuery {
         UsersTable.insert {
             it[id] = user.id
             it[firstName] = user.firstName
             it[lastName] = user.lastName
             it[userName] = user.userName
+            it[locationId] = user.locationId
         }[UsersTable.id]
     }
 
@@ -53,7 +52,8 @@ class UserService(db: Database) {
                         it[UsersTable.id],
                         it[UsersTable.firstName],
                         it[UsersTable.lastName],
-                        it[UsersTable.userName]
+                        it[UsersTable.userName],
+                        it[UsersTable.locationId]
                     )
                 }
                 .singleOrNull()
@@ -66,6 +66,7 @@ class UserService(db: Database) {
                 it[firstName] = user.firstName
                 it[lastName] = user.lastName
                 it[userName] = user.userName
+                it[locationId] = user.locationId
             }
         }
     }

@@ -1,15 +1,17 @@
 package com.dsidak.bot
 
 import com.dsidak.configuration.config
+import com.dsidak.db.DatabaseManager
+import com.dsidak.db.schemas.Location
+import com.dsidak.db.schemas.User
 import com.dsidak.dotenv
 import com.dsidak.geocoding.CityInfo
 import com.dsidak.geocoding.Geocoding
 import com.dsidak.weather.Fetcher
 import com.google.common.base.Predicates
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
-import org.telegram.telegrambots.abilitybots.api.db.DBContext
-import org.telegram.telegrambots.abilitybots.api.db.MapDBContext.onlineInstance
 import org.telegram.telegrambots.abilitybots.api.objects.Ability
 import org.telegram.telegrambots.abilitybots.api.objects.Locality
 import org.telegram.telegrambots.abilitybots.api.objects.Privacy
@@ -18,8 +20,8 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.time.LocalDate
 import java.util.*
 
-class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBContext = onlineInstance(botUsername)) :
-    AbilityBot(telegramClient, botUsername, db) {
+class WeatherBot(telegramClient: TelegramClient, botUsername: String) :
+    AbilityBot(telegramClient, botUsername) {
     private val log = KotlinLogging.logger {}
 
     /**
@@ -63,7 +65,18 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                 }
 
                 log.debug { "Check the weather for $dateWithOffset" }
-                val location = readLocation(ctx.user().id)
+                val location = runBlocking {
+                    val tgUser = ctx.user()
+                    DatabaseManager.createOrReadUser(
+                        User(
+                            tgUser.id,
+                            tgUser.firstName,
+                            tgUser.lastName,
+                            tgUser.userName
+                        )
+                    )
+                    readLocation(ctx.user().id)
+                }
                 if (location.isEmpty) {
                     silent.send("Please, provide your location first using /location <city>, [country]", ctx.chatId())
                     return@action
@@ -72,7 +85,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                 log.debug { "Location is $location" }
 
                 val responseToUser = try {
-                    Fetcher().fetchWeather(location.get(), dateWithOffset)
+                    Fetcher().fetchWeather(location.get().city, dateWithOffset)
                 } catch (e: IllegalArgumentException) {
                     "Wrong input data: ${e.message}"
                 } catch (e: Exception) {
@@ -116,14 +129,24 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
                     return@action
                 }
                 log.info { "Checked geolocation of $city: $cityInfo" }
-                // TODO: save coordinates and country to the database
-                val previousLocation = updateLocation(ctx.user().id, cityInfo.name)
+                val previousLocation = runBlocking {
+                    val tgUser = ctx.user()
+                    DatabaseManager.createOrReadUser(
+                        User(
+                            tgUser.id,
+                            tgUser.firstName,
+                            tgUser.lastName,
+                            tgUser.userName
+                        )
+                    )
+                    updateLocation(ctx.user().id, cityInfo)
+                }
                 val helperMessage =
                     "Location is set to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, please state city and two-letter-length country code separated by comma."
                 if (previousLocation.isEmpty) {
                     silent.send(helperMessage, ctx.chatId())
                 } else {
-                    silent.send("Location updated from ${previousLocation.get()} to $city", ctx.chatId())
+                    silent.send("Location updated from ${previousLocation.get().city} to $city", ctx.chatId())
                     silent.send(helperMessage, ctx.chatId())
                 }
             }
@@ -136,9 +159,13 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
      * @param userId the user ID
      * @return an [Optional] containing the location if it exists, otherwise [Optional.empty]
      */
-    private fun readLocation(userId: Long): Optional<String> {
-        val locations = db.getMap<Long, String>("LOCATIONS")
-        return Optional.ofNullable(locations[userId])
+    private suspend fun readLocation(userId: Long): Optional<Location> {
+        val user = DatabaseManager.userService.read(userId)!!
+        return if (user.locationId != null) {
+            Optional.of(DatabaseManager.locationService.read(user.locationId)!!)
+        } else {
+            Optional.empty()
+        }
     }
 
     /**
@@ -148,14 +175,26 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
      * @param location the new location
      * @return an [Optional] containing the previous location if it existed, otherwise [Optional.empty]
      */
-    private fun updateLocation(userId: Long, location: String?): Optional<String> {
-        val locations = db.getMap<Long, String>("LOCATIONS")
-        val previous = if (location == null) {
-            locations.remove(userId)
+    private suspend fun updateLocation(userId: Long, location: CityInfo?): Optional<Location> {
+        val user = DatabaseManager.userService.read(userId)!!
+        val oldLocation = if (user.locationId != null) {
+            DatabaseManager.locationService.read(user.locationId)
         } else {
-            locations.put(userId, location)
+            null
         }
-        return Optional.ofNullable(previous)
+
+        if (location != null) {
+            val newLocationId = DatabaseManager.createOrReadLocation(
+                Location(
+                    city = location.name,
+                    country = location.country,
+                    latitude = location.latitude,
+                    longitude = location.longitude
+                )
+            )
+            DatabaseManager.userService.update(userId, user.copy(locationId = newLocationId))
+        }
+        return Optional.ofNullable(oldLocation)
     }
 
     @Suppress("unused")
@@ -166,11 +205,22 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String, db: DBCont
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
             .action { ctx ->
-                val previousLocation = updateLocation(ctx.user().id, null)
+                val previousLocation = runBlocking {
+                    val tgUser = ctx.user()
+                    DatabaseManager.createOrReadUser(
+                        User(
+                            tgUser.id,
+                            tgUser.firstName,
+                            tgUser.lastName,
+                            tgUser.userName
+                        )
+                    )
+                    updateLocation(ctx.user().id, null)
+                }
                 if (previousLocation.isEmpty) {
                     silent.send("No location was set", ctx.chatId())
                 } else {
-                    silent.send("Location dropped from ${previousLocation.get()}", ctx.chatId())
+                    silent.send("Location dropped from ${previousLocation.get().city}", ctx.chatId())
                 }
             }
             .build()

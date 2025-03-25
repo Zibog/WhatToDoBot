@@ -5,15 +5,12 @@ import com.dsidak.configuration.config
 import org.junit.jupiter.api.Disabled
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.*
-import org.telegram.telegrambots.abilitybots.api.db.DBContext
-import org.telegram.telegrambots.abilitybots.api.db.MapDBContext
 import org.telegram.telegrambots.abilitybots.api.sender.SilentSender
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import kotlin.random.Random
-import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -23,33 +20,27 @@ class WeatherBotTest {
     private lateinit var bot: WeatherBot
     // Sender to mock
     private lateinit var sender: SilentSender
-    // Offline DB instance for the test
-    private lateinit var db: DBContext
+    private lateinit var user: User
 
     @BeforeTest
     fun setUp() {
-        // Offline DB instance will get deleted at JVM shutdown
-        db = MapDBContext.offlineInstance("test${Random.nextInt()}")
         // Create bot with our offline DB
-        bot = WeatherBot(OkHttpTelegramClient(TOKEN), BOT_USERNAME + Random.nextInt(), db)
+        bot = WeatherBot(OkHttpTelegramClient(TOKEN), BOT_USERNAME + Random.nextInt())
         // Call onRegister() to initialize abilities etc.
         bot.onRegister()
         // Create a new sender as a mock
         sender = mock(SilentSender::class.java)
         // Set your bot silent sender to the mocked sender
         bot.setSilentSender(sender)
-    }
-
-    @AfterTest
-    fun tearDown() {
-        db.clear()
+        user = User.builder().id(Random.nextLong()).firstName("fname").lastName("lname").userName("uname").isBot(false)
+            .build()
     }
 
     @Test
     fun testWeather() {
         val update = mockFullUpdate("/weather today")
         bot.consume(update)
-        verify(sender, times(1)).send("Please, provide your location first using /location <city>, [country]", USER.id)
+        verify(sender, times(1)).send("Please, provide your location first using /location <city>, [country]", user.id)
 
         val updateLocation = mockFullUpdate("/location Sofia")
         bot.consume(updateLocation)
@@ -58,13 +49,13 @@ class WeatherBotTest {
             times(1)
         ).send(
             "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
-            USER.id
+            user.id
         )
 
         // Try to ask again with city set
         bot.consume(update)
         // TODO: potentially flaky. We should ask the chat bot for some specific structure of the output, which can be tested
-        verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(USER.id))
+        verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(user.id))
     }
 
     @Test
@@ -74,31 +65,31 @@ class WeatherBotTest {
 
         val update = mockFullUpdate("/weather")
         bot.consume(update)
-        verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(USER.id))
+        verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(user.id))
     }
 
     @Test
     fun testWeatherCommand_invalidArgument() {
         val invalidArgUpdate = mockFullUpdate("/weather yesterday")
         bot.consume(invalidArgUpdate)
-        verify(sender, times(1)).send("Invalid argument 'yesterday'. Please, provide valid offset", USER.id)
+        verify(sender, times(1)).send("Invalid argument 'yesterday'. Please, provide valid offset", user.id)
 
         val invalidArgUpdate2 = mockFullUpdate("/weather 666")
         bot.consume(invalidArgUpdate2)
-        verify(sender, times(1)).send("Invalid argument '666'. Please, provide valid offset", USER.id)
+        verify(sender, times(1)).send("Invalid argument '666'. Please, provide valid offset", user.id)
 
         val invalidArgUpdate3 = mockFullUpdate("/weather -1")
         bot.consume(invalidArgUpdate3)
-        verify(sender, times(1)).send("Invalid argument '-1'. Please, provide valid offset", USER.id)
+        verify(sender, times(1)).send("Invalid argument '-1'. Please, provide valid offset", user.id)
 
         val outOfBound = config.upperBound + 1
         val invalidArgUpdate4 = mockFullUpdate("/weather $outOfBound")
         bot.consume(invalidArgUpdate4)
-        verify(sender, times(1)).send("Invalid argument '$outOfBound'. Please, provide valid offset", USER.id)
+        verify(sender, times(1)).send("Invalid argument '$outOfBound'. Please, provide valid offset", user.id)
 
         val multipleArgsUpdate = mockFullUpdate("/weather 9 9 9")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(1)).send("Invalid argument '9'. Please, provide valid offset", USER.id)
+        verify(sender, times(1)).send("Invalid argument '9'. Please, provide valid offset", user.id)
     }
 
     @Test
@@ -110,29 +101,29 @@ class WeatherBotTest {
             times(1)
         ).send(
             "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
-            USER.id
+            user.id
         )
 
         val update2 = mockFullUpdate("/location Plovdiv")
         bot.consume(update2)
-        verify(sender, times(1)).send("Location updated from Sofia to Plovdiv", USER.id)
+        verify(sender, times(1)).send("Location updated from Sofia to Plovdiv", user.id)
         verify(
             sender,
             times(1)
         ).send(
             "Location is set to Plovdiv, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
-            USER.id
+            user.id
         )
 
         val update3 = mockFullUpdate("/location Tbilisi")
         bot.consume(update3)
-        verify(sender, times(1)).send("Location updated from Plovdiv to Tbilisi", USER.id)
+        verify(sender, times(1)).send("Location updated from Plovdiv to Tbilisi", user.id)
         verify(
             sender,
             times(1)
         ).send(
             "Location is set to Tbilisi, GE. If location is wrong, please state city and two-letter-length country code separated by comma.",
-            USER.id
+            user.id
         )
     }
 
@@ -145,7 +136,7 @@ class WeatherBotTest {
             times(1)
         ).send(
             "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
-            USER.id
+            user.id
         )
     }
 
@@ -153,11 +144,11 @@ class WeatherBotTest {
     fun testLocationCommand_wrongArgumentsNumber() {
         val zeroArgUpdate = mockFullUpdate("/location")
         bot.consume(zeroArgUpdate)
-        verify(sender, times(1)).send("Sorry, this feature requires 1 or 2 additional inputs.", USER.id)
+        verify(sender, times(1)).send("Sorry, this feature requires 1 or 2 additional inputs.", user.id)
 
         val multipleArgsUpdate = mockFullUpdate("/location Tut Tam Sam")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(2)).send("Sorry, this feature requires 1 or 2 additional inputs.", USER.id)
+        verify(sender, times(2)).send("Sorry, this feature requires 1 or 2 additional inputs.", user.id)
     }
 
     @Test
@@ -166,7 +157,7 @@ class WeatherBotTest {
         bot.consume(update)
         verify(sender, times(1)).send(
             "No results found for the city NonexistentCity. Try to specify the country",
-            USER.id
+            user.id
         )
     }
 
@@ -174,17 +165,17 @@ class WeatherBotTest {
     fun testRestartCommand() {
         val restartUpdate = mockFullUpdate("/restart")
         bot.consume(restartUpdate)
-        verify(sender, times(1)).send("No location was set", USER.id)
+        verify(sender, times(1)).send("No location was set", user.id)
 
         val updateLocation = mockFullUpdate("/location Sofia")
         bot.consume(updateLocation)
         val restartUpdate2 = mockFullUpdate("/restart")
         bot.consume(restartUpdate2)
-        verify(sender, times(1)).send("Location dropped from Sofia", USER.id)
+        verify(sender, times(1)).send("Location dropped from Sofia", user.id)
 
         val restartUpdate3 = mockFullUpdate("/restart")
         bot.consume(restartUpdate3)
-        verify(sender, times(2)).send("No location was set", USER.id)
+        verify(sender, times(1)).send("No location was set", user.id)
     }
 
     @Test
@@ -208,7 +199,7 @@ class WeatherBotTest {
             |/restart drops your location
             |/help shows this instruction :)
             |/commands lists you with supported commands with short descriptions
-            """.trimMargin(), USER.id
+            """.trimMargin(), user.id
         )
     }
 
@@ -217,11 +208,11 @@ class WeatherBotTest {
         var update = mockFullUpdate("Hello")
         bot.consume(update)
         val message = """This bot works only with commands. To check them, use /commands or /help"""
-        verify(sender, times(1)).sendMd(message, USER.id)
+        verify(sender, times(1)).sendMd(message, user.id)
 
         update = mockFullUpdate("Hello, World!")
         bot.consume(update)
-        verify(sender, times(2)).sendMd(message, USER.id)
+        verify(sender, times(2)).sendMd(message, user.id)
     }
 
     @Disabled("Can't capture arbitrary commands due to AbilityBot limitations")
@@ -230,13 +221,13 @@ class WeatherBotTest {
         val update = mockFullUpdate("/unknown")
         bot.consume(update)
         val message = """This bot works only with commands. To check them, use /commands or /help"""
-        verify(sender, times(1)).sendMd(message, USER.id)
+        verify(sender, times(1)).sendMd(message, user.id)
     }
 
-    private fun mockFullUpdate(args: String, fromUser: User = USER): Update {
-        bot.users()[USER.id] = USER
+    private fun mockFullUpdate(args: String, fromUser: User = user): Update {
+        bot.users()[user.id] = user
         bot.users()[CREATOR.id] = CREATOR
-        bot.userIds()[USER.userName] = USER.id
+        bot.userIds()[user.userName] = user.id
         bot.userIds()[CREATOR.userName] = CREATOR.id
 
         bot.admins().add(CREATOR.id)
@@ -270,8 +261,6 @@ class WeatherBotTest {
         private const val TOKEN = "TOKEN"
         private const val BOT_USERNAME = "TestBot"
 
-        private val USER =
-            User.builder().id(1).firstName("fname").lastName("lname").userName("uname").isBot(false).build()
         private val CREATOR =
             User.builder().id(777).firstName("creatorFirst").lastName("creatorLast").userName("creatorUsername")
                 .isBot(false).build()

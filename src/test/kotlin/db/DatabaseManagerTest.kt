@@ -3,7 +3,6 @@ package db
 import com.dsidak.db.DatabaseManager
 import com.dsidak.db.schemas.Location
 import com.dsidak.db.schemas.User
-import com.dsidak.db.schemas.UserLocation
 import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 import kotlin.test.Test
@@ -25,13 +24,10 @@ class DatabaseManagerTest {
 
     @Test
     fun testDatabaseManager_createUser() {
-        val userId = runBlocking {
-            DatabaseManager.userService.create(
+        val userToCheck = runBlocking {
+            val userId = DatabaseManager.userService.create(
                 userToCreate
             )
-        }
-
-        val userToCheck = runBlocking {
             DatabaseManager.userService.read(userId)
         }
 
@@ -40,8 +36,39 @@ class DatabaseManagerTest {
 
     @Test
     fun testDatabaseManager_createLocation() {
+        val locationToCheck = runBlocking {
+            val locationId = DatabaseManager.locationService.create(
+                locationToCreate
+            )
+            DatabaseManager.locationService.read(locationId)
+        }
+
+        assertEquals(locationToCreate, locationToCheck)
+    }
+
+    @Test
+    fun testDatabaseManager_createUserWithLocation() {
+        val userWithLocation = runBlocking {
+            val locationId = DatabaseManager.locationService.create(
+                locationToCreate
+            )
+            userToCreate.copy(locationId = locationId)
+        }
+
+        val userToCheck = runBlocking {
+            val userId = DatabaseManager.userService.create(
+                userWithLocation
+            )
+            DatabaseManager.userService.read(userId)
+        }
+
+        assertEquals(userWithLocation, userToCheck)
+    }
+
+    @Test
+    fun testDatabaseManager_createOrReadLocation() {
         val locationId = runBlocking {
-            DatabaseManager.locationService.create(
+            DatabaseManager.createOrReadLocation(
                 locationToCreate
             )
         }
@@ -51,41 +78,48 @@ class DatabaseManagerTest {
         }
 
         assertEquals(locationToCreate, locationToCheck)
-    }
 
-    @Test
-    fun testDatabaseManager_createUserLocation() {
-        val userId = runBlocking {
-            DatabaseManager.userService.create(
-                userToCreate
-            )
-        }
-
-        val locationId = runBlocking {
-            DatabaseManager.locationService.create(
+        val locationId2 = runBlocking {
+            DatabaseManager.createOrReadLocation(
                 locationToCreate
             )
         }
 
-        val userLocationToCreate = UserLocation(
-            userId = userId,
-            locationId = locationId
+        assertEquals(locationId, locationId2)
+    }
+
+    @Test
+    fun testDatabaseManager_createOrReadUser() {
+        val userWithLocation = userToCreate.copy(
+            locationId = runBlocking {
+                DatabaseManager.createOrReadLocation(
+                    locationToCreate
+                )
+            }
         )
 
-        val userLocationId = runBlocking {
-            DatabaseManager.userLocationService.create(
-                userLocationToCreate
+        runBlocking {
+            DatabaseManager.createOrReadUser(
+                userWithLocation
             )
         }
 
-        val userLocationToCheck = runBlocking {
-            DatabaseManager.userLocationService.read(userLocationId)
+        val userToCheck = runBlocking {
+            DatabaseManager.userService.read(userWithLocation.id)
         }
 
-        assertEquals(userLocationToCreate, userLocationToCheck)
-        assertEquals(userToCreate, runBlocking { DatabaseManager.userService.read(userLocationToCheck!!.userId) })
-        assertEquals(
-            locationToCreate,
-            runBlocking { DatabaseManager.locationService.read(userLocationToCheck!!.locationId) })
+        assertEquals(userWithLocation, userToCheck)
+
+        runBlocking {
+            DatabaseManager.createOrReadUser(
+                userWithLocation
+            )
+        }
+
+        val userToCheck2 = runBlocking {
+            DatabaseManager.userService.read(userWithLocation.id)
+        }
+
+        assertEquals(userWithLocation, userToCheck2)
     }
 }

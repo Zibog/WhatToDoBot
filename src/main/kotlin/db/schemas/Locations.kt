@@ -1,12 +1,9 @@
 package com.dsidak.db.schemas
 
-import kotlinx.coroutines.Dispatchers
+import com.dsidak.db.dbQuery
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 
 @Serializable
@@ -14,15 +11,19 @@ data class Location(
     val city: String,
     val country: String,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    val id: Long? = null
 )
 
 class LocationService(db: Database) {
-    object LocationsTable : LongIdTable() {
+    object LocationsTable : Table() {
+        val id = long("id").autoIncrement()
         val city = varchar("city", 50)
         val country = varchar("country", 2)
         val latitude = double("latitude")
         val longitude = double("longitude")
+
+        override val primaryKey = PrimaryKey(id)
     }
 
     init {
@@ -31,10 +32,7 @@ class LocationService(db: Database) {
         }
     }
 
-    private suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
-
-    suspend fun create(location: Location): EntityID<Long> = dbQuery {
+    suspend fun create(location: Location): Long = dbQuery {
         LocationsTable.insert {
             it[city] = location.city
             it[country] = location.country
@@ -43,7 +41,7 @@ class LocationService(db: Database) {
         }[LocationsTable.id]
     }
 
-    suspend fun read(id: EntityID<Long>): Location? {
+    suspend fun read(id: Long): Location? {
         return dbQuery {
             LocationsTable.selectAll()
                 .where { LocationsTable.id eq id }
@@ -76,7 +74,7 @@ class LocationService(db: Database) {
         }
     }
 
-    suspend fun update(id: EntityID<Long>, location: Location) {
+    suspend fun update(id: Long, location: Location) {
         dbQuery {
             LocationsTable.update({ LocationsTable.id eq id }) {
                 it[city] = location.city
@@ -87,7 +85,7 @@ class LocationService(db: Database) {
         }
     }
 
-    suspend fun delete(id: EntityID<Long>) {
+    suspend fun delete(id: Long) {
         dbQuery {
             LocationsTable.deleteWhere { LocationsTable.id.eq(id) }
         }
