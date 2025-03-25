@@ -3,15 +3,16 @@ package com.dsidak.geocoding
 import arrow.core.Either
 import com.dsidak.configuration.config
 import com.dsidak.dotenv
+import com.dsidak.http.RequestExecutor
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
 
-class Geocoding(private val httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) {
+class GeocodingFetcher(httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) :
+    RequestExecutor<List<CityInfo>>(httpClient) {
     private val log = KotlinLogging.logger {}
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -37,32 +38,21 @@ class Geocoding(private val httpClient: OkHttpClient = OkHttpClient().newBuilder
         return response[0]
     }
 
-    internal fun executeRequest(request: Request): Either<String, List<CityInfo>> {
-        runCatching {
-            httpClient.newCall(request).execute().use { response ->
-                if (response.isSuccessful) {
-                    response.body?.use { body ->
-                        val geoResponse = json.decodeFromString<List<CityInfo>>(body.string())
-                        if (geoResponse.isEmpty()) {
-                            return Either.Left("No results found for the given city")
-                        }
-                        return Either.Right(geoResponse)
-                    }
-                } else {
-                    return Either.Left("Request failed: ${response.code} ${response.message}")
-                }
+    override fun parseResponse(body: String): Either<String, List<CityInfo>> {
+        return try {
+            log.info { "Parsing geocoding response" }
+            val cityInfos = json.decodeFromString<List<CityInfo>>(body)
+            if (cityInfos.isEmpty()) {
+                val message = "No results found for the given city"
+                log.info { message }
+                return Either.Left(message)
             }
-        }.onFailure {
-            val errorMessage = "Failed to execute request"
-            log.error { it.printStackTrace() }
-            return when (it) {
-                is UnknownHostException -> Either.Left("$errorMessage: can't connect to remote service")
-                else -> Either.Left("$errorMessage. ${it.message.orEmpty()}")
-            }
+            Either.Right(cityInfos)
+        } catch (e: Exception) {
+            val message = "Failed to parse geocoding response: ${e.message}"
+            log.error { message }
+            return Either.Left(message)
         }
-
-        // Everything should be handled earlier
-        return Either.Left("Failed to execute request, try again later")
     }
 
     companion object {

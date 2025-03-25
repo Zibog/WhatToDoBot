@@ -1,23 +1,23 @@
 package chatbot
 
-import com.dsidak.chatbot.Client
+import com.dsidak.chatbot.GeminiClient
 import com.dsidak.weather.*
 import org.mockito.Mockito
 import java.time.LocalDate
 import kotlin.test.Test
 
-class ClientTest {
+class GeminiClientTest {
     @Test
     fun testGenerateContent_current() {
-        val client = Client()
-        val geminiResponse = client.generateContent(mockCurrent(), LocalDate.now())
+        val geminiClient = GeminiClient()
+        val geminiResponse = geminiClient.generateContent(mockCurrent(), LocalDate.now())
         assert(geminiResponse.isNotEmpty())
     }
 
     @Test
     fun testGenerateContent_forecast() {
-        val client = Client()
-        val geminiResponse = client.generateContent(mockForecast(), LocalDate.now().plusDays(2))
+        val geminiClient = GeminiClient()
+        val geminiResponse = geminiClient.generateContent(mockForecast(), LocalDate.now().plusDays(2))
         assert(geminiResponse.isNotEmpty())
     }
 

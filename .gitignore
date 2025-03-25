@@ -53,3 +53,4 @@ bin/
 
 # Environment-specific stuff
 /env/.env
+.qodo

@@ -6,8 +6,8 @@ import com.dsidak.db.schemas.Location
 import com.dsidak.db.schemas.User
 import com.dsidak.dotenv
 import com.dsidak.geocoding.CityInfo
-import com.dsidak.geocoding.Geocoding
-import com.dsidak.weather.Fetcher
+import com.dsidak.geocoding.GeocodingFetcher
+import com.dsidak.weather.WeatherFetcher
 import com.google.common.base.Predicates
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
@@ -85,7 +85,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String) :
                 log.debug { "Location is $location" }
 
                 val responseToUser = try {
-                    Fetcher().fetchWeather(location.get().city, dateWithOffset)
+                    WeatherFetcher().fetchWeather(location.get().city, dateWithOffset)
                 } catch (e: IllegalArgumentException) {
                     "Wrong input data: ${e.message}"
                 } catch (e: Exception) {
@@ -123,7 +123,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String) :
                 }
                 log.debug { "Received location=$city, $country" }
                 // TODO: check if the location is already in DB
-                val cityInfo = Geocoding().fetchCoordinates(city, country)
+                val cityInfo = GeocodingFetcher().fetchCoordinates(city, country)
                 if (cityInfo == CityInfo.EMPTY) {
                     silent.send("No results found for the city $city. Try to specify the country", ctx.chatId())
                     return@action
