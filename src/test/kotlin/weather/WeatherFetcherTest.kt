@@ -1,11 +1,10 @@
 package weather
 
+import base.HttpTestBase
 import com.dsidak.weather.WeatherFetcher
-import okhttp3.Call
-import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import java.io.File
 import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
@@ -13,8 +12,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class WeatherFetcherTest {
-    private val weatherFetcher = WeatherFetcher()
+class WeatherFetcherTest : HttpTestBase() {
+    private val weatherFetcher = WeatherFetcher(httpClient)
 
     @Test
     fun testExecuteRequest_currentWeather() {
@@ -26,6 +25,9 @@ class WeatherFetcherTest {
             .header("charset", StandardCharsets.UTF_8.name())
             .get()
             .build()
+
+        val file = File("$resources/weather/Sofia_BG_current.json")
+        mockResponse(request, file.readText())
 
         val response = weatherFetcher.executeRequest(request)
 
@@ -47,6 +49,8 @@ class WeatherFetcherTest {
             .get()
             .build()
 
+        mockResponse(request, code = 404, message = "Not Found")
+
         val response = weatherFetcher.executeRequest(request)
 
         assert(response.isLeft())
@@ -65,10 +69,9 @@ class WeatherFetcherTest {
             .build()
 
         // Simulate a network error
-        val mockedClient = mock(OkHttpClient::class.java)
-        `when`(mockedClient.newCall(request)).thenReturn(mock(Call::class.java))
-        `when`(mockedClient.newCall(request).execute()).thenThrow(UnknownHostException())
-        val offlineWeatherFetcher = WeatherFetcher(mockedClient)
+        `when`(httpClient.newCall(request)).thenReturn(call)
+        `when`(httpClient.newCall(request).execute()).thenThrow(UnknownHostException())
+        val offlineWeatherFetcher = WeatherFetcher(httpClient)
 
         val response = offlineWeatherFetcher.executeRequest(request)
 
@@ -89,6 +92,9 @@ class WeatherFetcherTest {
             .header("charset", StandardCharsets.UTF_8.name())
             .get()
             .build()
+
+        val file = File("$resources/weather/Munich_DE_forecast.json")
+        mockResponse(request, file.readText())
 
         val response = weatherFetcher.executeRequest(request)
 

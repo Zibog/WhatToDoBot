@@ -1,0 +1,34 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "I recommend you to embrace the moodiness of a cloudy London day with a visit to the Viktor Wynd Museum of Curiosities, Fine Art & Natural History. It's not your typical museum, but a cabinet of curiosities brimming with the strange, macabre, and utterly fascinating. Imagine yourself stepping into a world of taxidermied creatures, occult artifacts, shrunken heads, and anthropological oddities, all crammed into a wonderfully chaotic space. The chilly, slightly damp weather will only enhance the eccentric atmosphere. Afterwards, you can warm up in the connected cocktail bar, The Last Tuesday Society, and discuss your favourite finds over a uniquely themed drink. It's a bizarre, memorable, and undeniably London experience, perfectly suited for a slightly gloomy day.\n"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "avgLogprobs": -0.74752247797978388
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 94,
+    "candidatesTokenCount": 154,
+    "totalTokenCount": 248,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 94
+      }
+    ],
+    "candidatesTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 154
+      }
+    ]
+  },
+  "modelVersion": "gemini-2.0-flash"
+}

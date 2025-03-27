@@ -17,6 +17,7 @@ val dotenv: String by project
 val ktor: String by project
 val exposedVersion: String by project
 val h2Version: String by project
+val hoplite: String by project
 
 val mockitoAgent = configurations.create("mockitoAgent")
 
@@ -54,9 +55,9 @@ dependencies {
     implementation("com.h2database:h2:$h2Version")
 
     // https://mvnrepository.com/artifact/com.sksamuel.hoplite/hoplite-core
-    implementation("com.sksamuel.hoplite:hoplite-core:2.9.0")
+    implementation("com.sksamuel.hoplite:hoplite-core:$hoplite")
     // https://mvnrepository.com/artifact/com.sksamuel.hoplite/hoplite-yaml
-    implementation("com.sksamuel.hoplite:hoplite-yaml:2.9.0")
+    implementation("com.sksamuel.hoplite:hoplite-yaml:$hoplite")
 
     testImplementation(kotlin("test"))
     // https://mvnrepository.com/artifact/org.mockito/mockito-core

@@ -1,13 +1,15 @@
 package geocoding
 
+import base.HttpTestBase
 import com.dsidak.geocoding.GeocodingFetcher
 import okhttp3.Request
+import java.io.File
 import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class GeocodingFetcherTest {
+class GeocodingFetcherTest : HttpTestBase() {
     private val geocodingFetcher = GeocodingFetcher()
 
     @Test
@@ -18,6 +20,9 @@ class GeocodingFetcherTest {
             .header("charset", StandardCharsets.UTF_8.name())
             .get()
             .build()
+
+        val file = File("$resources/geocoding/GeoResponse_Sofia.json")
+        mockResponse(request, file.readText())
 
         val response = geocodingFetcher.executeRequest(request)
 
@@ -40,6 +45,9 @@ class GeocodingFetcherTest {
             .get()
             .build()
 
+        val file = File("$resources/geocoding/GeoResponse_Sofia_BG.json")
+        mockResponse(request, file.readText())
+
         val response = geocodingFetcher.executeRequest(request)
 
         assert(response.isRight())
@@ -60,6 +68,8 @@ class GeocodingFetcherTest {
             .header("charset", StandardCharsets.UTF_8.name())
             .get()
             .build()
+
+        mockResponse(request)
 
         val response = geocodingFetcher.executeRequest(request)
 
