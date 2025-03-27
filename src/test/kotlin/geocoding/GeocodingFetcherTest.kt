@@ -10,21 +10,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class GeocodingFetcherTest : HttpTestBase() {
-    private val geocodingFetcher = GeocodingFetcher()
+    private val geocodingFetcher = GeocodingFetcher(httpClient)
 
     @Test
     fun testExecuteRequest_onlyCity() {
-        val url = GeocodingFetcher.toUrl("Sofia")
-        val request = Request.Builder()
-            .url(url)
-            .header("charset", StandardCharsets.UTF_8.name())
-            .get()
-            .build()
-
         val file = File("$resources/geocoding/GeoResponse_Sofia.json")
-        mockResponse(request, file.readText())
+        mockResponse(file.readText())
 
-        val response = geocodingFetcher.executeRequest(request)
+        val response = geocodingFetcher.executeRequest(DEFAULT_REQUEST)
 
         assert(response.isRight())
         val geoResponse = response.getOrNull()
@@ -38,17 +31,10 @@ class GeocodingFetcherTest : HttpTestBase() {
 
     @Test
     fun testExecuteRequest_withCountry() {
-        val url = GeocodingFetcher.toUrl("Sofia", "BG")
-        val request = Request.Builder()
-            .url(url)
-            .header("charset", StandardCharsets.UTF_8.name())
-            .get()
-            .build()
-
         val file = File("$resources/geocoding/GeoResponse_Sofia_BG.json")
-        mockResponse(request, file.readText())
+        mockResponse(file.readText())
 
-        val response = geocodingFetcher.executeRequest(request)
+        val response = geocodingFetcher.executeRequest(DEFAULT_REQUEST)
 
         assert(response.isRight())
         val geoResponse = response.getOrNull()
@@ -69,7 +55,7 @@ class GeocodingFetcherTest : HttpTestBase() {
             .get()
             .build()
 
-        mockResponse(request)
+        mockResponse(request = request)
 
         val response = geocodingFetcher.executeRequest(request)
 

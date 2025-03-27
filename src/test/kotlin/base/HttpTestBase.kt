@@ -11,7 +11,12 @@ abstract class HttpTestBase : ResourceTestBase {
     protected val httpClient: OkHttpClient = mock(OkHttpClient::class.java)
     protected val call: Call = mock(RealCall::class.java)
 
-    protected fun mockResponse(request: Request, responseBody: String? = null, code: Int = 200, message: String = "") {
+    protected fun mockResponse(
+        responseBody: String? = null,
+        request: Request? = null,
+        code: Int = 200,
+        message: String = ""
+    ) {
         val body = if (responseBody == null) {
             EMPTY_RESPONSE_BODY
         } else {
@@ -22,14 +27,14 @@ abstract class HttpTestBase : ResourceTestBase {
             )
         }
         val response = Response.Builder()
-            .request(request)
+            .request(request ?: DEFAULT_REQUEST)
             .protocol(Protocol.HTTP_1_1)
             .code(code)
             .body(body)
             .message(message)
             .build()
 
-        `when`(httpClient.newCall(request)).thenReturn(call)
+        `when`(httpClient.newCall(request ?: DEFAULT_REQUEST)).thenReturn(call)
         `when`(call.execute()).thenReturn(response)
     }
 
@@ -40,5 +45,6 @@ abstract class HttpTestBase : ResourceTestBase {
             EMPTY_CONTENT.length.toLong(),
             Buffer().readFrom(EMPTY_CONTENT.byteInputStream())
         )
+        val DEFAULT_REQUEST = Request.Builder().url("http://test.com").build()
     }
 }

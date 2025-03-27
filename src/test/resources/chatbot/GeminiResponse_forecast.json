@@ -4,19 +4,19 @@
       "content": {
         "parts": [
           {
-            "text": "I recommend you to embrace the moodiness of a cloudy London day with a visit to the Viktor Wynd Museum of Curiosities."
+            "text": "I recommend you to embrace the moodiness of London's cloudy weather on March 30th with a self-guided \"Literary London\" walking tour."
           }
         ],
         "role": "model"
       },
       "finishReason": "STOP",
-      "avgLogprobs": -0.74752247797978388
+      "avgLogprobs": -0.85047935982773593
     }
   ],
   "usageMetadata": {
     "promptTokenCount": 94,
-    "candidatesTokenCount": 154,
-    "totalTokenCount": 248,
+    "candidatesTokenCount": 261,
+    "totalTokenCount": 355,
     "promptTokensDetails": [
       {
         "modality": "TEXT",
@@ -26,7 +26,7 @@
     "candidatesTokensDetails": [
       {
         "modality": "TEXT",
-        "tokenCount": 154
+        "tokenCount": 261
       }
     ]
   },
