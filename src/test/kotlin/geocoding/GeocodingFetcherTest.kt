@@ -55,7 +55,7 @@ class GeocodingFetcherTest : HttpTestBase() {
             .get()
             .build()
 
-        mockResponse(request = request)
+        mockResponse()
 
         val response = geocodingFetcher.executeRequest(request)
 

@@ -4,7 +4,6 @@ import base.HttpTestBase
 import com.dsidak.chatbot.FinishReason
 import com.dsidak.chatbot.GeminiClient
 import com.dsidak.weather.*
-import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
 import java.io.File
 import java.time.LocalDate
@@ -33,7 +32,7 @@ class GeminiClientTest : HttpTestBase() {
     @Test
     fun testGenerateContent_current() {
         val file = File("$resources/chatbot/GeminiResponse_current.json")
-        mockResponse(file.readText(), any())
+        mockResponse(file.readText())
 
         val geminiResponse = geminiClient.generateContent(mockCurrent(), LocalDate.now())
         assertEquals(
@@ -45,7 +44,7 @@ class GeminiClientTest : HttpTestBase() {
     @Test
     fun testGenerateContent_forecast() {
         val file = File("$resources/chatbot/GeminiResponse_forecast.json")
-        mockResponse(file.readText(), any())
+        mockResponse(file.readText())
 
         val geminiResponse = geminiClient.generateContent(mockForecast(), LocalDate.now().plusDays(2))
         assertEquals(

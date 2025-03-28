@@ -18,7 +18,7 @@ abstract class HttpTestBase : ResourceTestBase {
         message: String = ""
     ) {
         val body = if (responseBody == null) {
-            EMPTY_RESPONSE_BODY
+            createEmptyBody()
         } else {
             RealResponseBody(
                 "application/json",
@@ -34,7 +34,7 @@ abstract class HttpTestBase : ResourceTestBase {
             .message(message)
             .build()
 
-        whenever(httpClient.newCall(request ?: DEFAULT_REQUEST)).thenReturn(call)
+        whenever(httpClient.newCall(any())).thenReturn(call)
         whenever(call.execute()).thenReturn(response)
     }
 
@@ -46,7 +46,7 @@ abstract class HttpTestBase : ResourceTestBase {
         httpClient: OkHttpClient
     ) {
         val body = if (responseBody == null) {
-            EMPTY_RESPONSE_BODY
+            createEmptyBody()
         } else {
             RealResponseBody(
                 "application/json",
@@ -67,13 +67,16 @@ abstract class HttpTestBase : ResourceTestBase {
         whenever(call.execute()).thenReturn(response)
     }
 
-    companion object {
-        private const val EMPTY_CONTENT = "[]"
-        private val EMPTY_RESPONSE_BODY = RealResponseBody(
+    private fun createEmptyBody(): ResponseBody {
+        return RealResponseBody(
             "application/json",
             EMPTY_CONTENT.length.toLong(),
             Buffer().readFrom(EMPTY_CONTENT.byteInputStream())
         )
+    }
+
+    companion object {
+        private const val EMPTY_CONTENT = "[]"
         val DEFAULT_REQUEST = Request.Builder().url("http://test.com").build()
     }
 }
