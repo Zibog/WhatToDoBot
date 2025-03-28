@@ -16,22 +16,26 @@ import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import java.io.File
 import kotlin.random.Random
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 
 class WeatherBotTest : HttpTestBase() {
     // Bot to test
-    private lateinit var bot: WeatherBot
+    private var bot: WeatherBot
     // Sender to mock
-    private lateinit var sender: SilentSender
-    private lateinit var user: User
+    private val sender: SilentSender = mock()
+    private var user: User = User.builder()
+        .id(Random.nextLong())
+        .firstName("fname")
+        .lastName("lname")
+        .userName("uname")
+        .isBot(false)
+        .build()
     private val geminiHttpClient: OkHttpClient = mock()
     private val weatherHttpClient: OkHttpClient = mock()
     private val geoHttpClient: OkHttpClient = mock()
 
-    @BeforeTest
-    fun setUp() {
+    init {
         // Create bot with mocked http client
         val geminiClient = GeminiClient(geminiHttpClient)
         val weatherFetcher = WeatherFetcher(weatherHttpClient, geminiClient)
@@ -39,12 +43,8 @@ class WeatherBotTest : HttpTestBase() {
         bot = WeatherBot(OkHttpTelegramClient(TOKEN), BOT_USERNAME + Random.nextInt(), weatherFetcher, geocodingFetcher)
         // Call onRegister() to initialize abilities etc.
         bot.onRegister()
-        // Create a new sender as a mock
-        sender = mock()
         // Set your bot silent sender to the mocked sender
         bot.setSilentSender(sender)
-        user = User.builder().id(Random.nextLong()).firstName("fname").lastName("lname").userName("uname").isBot(false)
-            .build()
     }
 
     @Test
