@@ -1,33 +1,23 @@
 package weather
 
+import base.HttpTestBase
 import com.dsidak.weather.WeatherFetcher
-import okhttp3.Call
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.`when`
+import org.mockito.kotlin.whenever
+import java.io.File
 import java.net.UnknownHostException
-import java.nio.charset.StandardCharsets
-import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class WeatherFetcherTest {
-    private val weatherFetcher = WeatherFetcher()
+class WeatherFetcherTest : HttpTestBase() {
+    private val weatherFetcher = WeatherFetcher(httpClient)
 
     @Test
     fun testExecuteRequest_currentWeather() {
-        val date = LocalDate.now()
-        val url = WeatherFetcher.toUrl("Sofia", date)
+        val file = File("$resources/weather/Sofia_BG_current.json")
+        mockResponse(file.readText())
 
-        val request = Request.Builder()
-            .url(url)
-            .header("charset", StandardCharsets.UTF_8.name())
-            .get()
-            .build()
-
-        val response = weatherFetcher.executeRequest(request)
+        val response = weatherFetcher.executeRequest(DEFAULT_REQUEST)
 
         assert(response.isRight())
         val weatherResponse = response.getOrNull()
@@ -38,16 +28,9 @@ class WeatherFetcherTest {
 
     @Test
     fun testExecuteRequest_currentWeather_wrongCity() {
-        val date = LocalDate.now()
-        val url = WeatherFetcher.toUrl("Diaspar", date)
+        mockResponse(code = 404, message = "Not Found")
 
-        val request = Request.Builder()
-            .url(url)
-            .header("charset", StandardCharsets.UTF_8.name())
-            .get()
-            .build()
-
-        val response = weatherFetcher.executeRequest(request)
+        val response = weatherFetcher.executeRequest(DEFAULT_REQUEST)
 
         assert(response.isLeft())
         assertEquals("Request failed: 404 Not Found", response.leftOrNull())
@@ -55,22 +38,12 @@ class WeatherFetcherTest {
 
     @Test
     fun testExecuteRequest_noNetwork() {
-        val date = LocalDate.now()
-        val url = WeatherFetcher.toUrl("Sofia", date)
-
-        val request = Request.Builder()
-            .url(url)
-            .header("charset", StandardCharsets.UTF_8.name())
-            .get()
-            .build()
-
         // Simulate a network error
-        val mockedClient = mock(OkHttpClient::class.java)
-        `when`(mockedClient.newCall(request)).thenReturn(mock(Call::class.java))
-        `when`(mockedClient.newCall(request).execute()).thenThrow(UnknownHostException())
-        val offlineWeatherFetcher = WeatherFetcher(mockedClient)
+        whenever(httpClient.newCall(DEFAULT_REQUEST)).thenReturn(call)
+        whenever(httpClient.newCall(DEFAULT_REQUEST).execute()).thenThrow(UnknownHostException())
+        val offlineWeatherFetcher = WeatherFetcher(httpClient)
 
-        val response = offlineWeatherFetcher.executeRequest(request)
+        val response = offlineWeatherFetcher.executeRequest(DEFAULT_REQUEST)
 
         assert(response.isLeft())
         assertEquals(
@@ -81,16 +54,10 @@ class WeatherFetcherTest {
 
     @Test
     fun testExecuteRequest_forecast() {
-        val date = LocalDate.now().plusDays(1)
-        val url = WeatherFetcher.toUrl("München", date)
+        val file = File("$resources/weather/Munich_DE_forecast.json")
+        mockResponse(file.readText())
 
-        val request = Request.Builder()
-            .url(url)
-            .header("charset", StandardCharsets.UTF_8.name())
-            .get()
-            .build()
-
-        val response = weatherFetcher.executeRequest(request)
+        val response = weatherFetcher.executeRequest(DEFAULT_REQUEST)
 
         assert(response.isRight())
         val weatherResponse = response.getOrNull()

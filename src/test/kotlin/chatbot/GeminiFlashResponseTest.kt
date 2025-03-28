@@ -10,7 +10,7 @@ import kotlin.test.assertEquals
 class GeminiFlashResponseTest : JsonTestBase {
     @Test
     fun testDecodeEncodeJson_Paris() {
-        val file = File("$resources/GeminiResponse_Paris.json")
+        val file = File("$resources/chatbot/GeminiResponse_Paris.json")
         val response = json.decodeFromString<GeminiFlashResponse>(file.readText())
 
         assertEquals(1, response.candidates.size)

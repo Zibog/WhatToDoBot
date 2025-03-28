@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 class WeatherResponseTest : JsonTestBase {
     @Test
     fun testDecodeJson_current_city() {
-        var file = File("$resources/Newtonhill_GB_current.json")
+        var file = File("$resources/weather/Newtonhill_GB_current.json")
         var weatherResponse: WeatherResponse = json.decodeFromString<CurrentWeatherResponse>(file.readText())
 
         checkCoordinates(-2.15, 57.0, weatherResponse.coordinates)
@@ -23,7 +23,7 @@ class WeatherResponseTest : JsonTestBase {
         assertEquals(0, weatherResponse.timezone)
         assertEquals("Newtonhill", weatherResponse.cityName)
 
-        file = File("$resources/Sofia_BG_current.json")
+        file = File("$resources/weather/Sofia_BG_current.json")
         weatherResponse = json.decodeFromString<CurrentWeatherResponse>(file.readText())
 
         checkCoordinates(23.3242, 42.6975, weatherResponse.coordinates)
@@ -40,7 +40,7 @@ class WeatherResponseTest : JsonTestBase {
 
     @Test
     fun testDecodeJson_forecast_city() {
-        val file = File("$resources/Munich_DE_forecast.json")
+        val file = File("$resources/weather/Munich_DE_forecast.json")
         val weatherResponse: WeatherResponse = json.decodeFromString<ForecastWeatherResponse>(file.readText())
 
         checkCoordinates(11.5755, 48.1374, weatherResponse.coordinates)

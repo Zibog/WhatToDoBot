@@ -15,6 +15,7 @@ abstract class RequestExecutor<T>(private val httpClient: OkHttpClient) {
     fun executeRequest(request: Request): Either<String, T> {
         runCatching {
             httpClient.newCall(request).execute().use { response ->
+                log.debug { "Received response: $response" }
                 if (response.isSuccessful) {
                     response.body?.use { body ->
                         return parseResponse(body.string())

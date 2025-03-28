@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 class GeoResponseTest : JsonTestBase {
     @Test
     fun testDecodeJson_example() {
-        val file = File("$resources/GeoResponse_example.json")
+        val file = File("$resources/geocoding/GeoResponse_example.json")
         val geoResponse: List<CityInfo> = json.decodeFromString<List<CityInfo>>(file.readText())
 
         assertEquals(5, geoResponse.size)

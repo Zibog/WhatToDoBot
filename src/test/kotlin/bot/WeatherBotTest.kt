@@ -1,43 +1,56 @@
 package bot
 
+import base.HttpTestBase
 import com.dsidak.bot.WeatherBot
+import com.dsidak.chatbot.GeminiClient
 import com.dsidak.configuration.config
+import com.dsidak.geocoding.GeocodingFetcher
+import com.dsidak.weather.WeatherFetcher
+import okhttp3.OkHttpClient
 import org.junit.jupiter.api.Disabled
-import org.mockito.ArgumentMatchers
-import org.mockito.Mockito.*
+import org.mockito.kotlin.*
 import org.telegram.telegrambots.abilitybots.api.sender.SilentSender
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
+import java.io.File
 import kotlin.random.Random
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 
-class WeatherBotTest {
+class WeatherBotTest : HttpTestBase() {
     // Bot to test
-    private lateinit var bot: WeatherBot
+    private var bot: WeatherBot
     // Sender to mock
-    private lateinit var sender: SilentSender
-    private lateinit var user: User
+    private val sender: SilentSender = mock()
+    private var user: User = User.builder()
+        .id(Random.nextLong())
+        .firstName("fname")
+        .lastName("lname")
+        .userName("uname")
+        .isBot(false)
+        .build()
+    private val geminiHttpClient: OkHttpClient = mock()
+    private val weatherHttpClient: OkHttpClient = mock()
+    private val geoHttpClient: OkHttpClient = mock()
 
-    @BeforeTest
-    fun setUp() {
-        // Create bot with our offline DB
-        bot = WeatherBot(OkHttpTelegramClient(TOKEN), BOT_USERNAME + Random.nextInt())
+    init {
+        // Create bot with mocked http client
+        val geminiClient = GeminiClient(geminiHttpClient)
+        val weatherFetcher = WeatherFetcher(weatherHttpClient, geminiClient)
+        val geocodingFetcher = GeocodingFetcher(geoHttpClient)
+        bot = WeatherBot(OkHttpTelegramClient(TOKEN), BOT_USERNAME + Random.nextInt(), weatherFetcher, geocodingFetcher)
         // Call onRegister() to initialize abilities etc.
         bot.onRegister()
-        // Create a new sender as a mock
-        sender = mock(SilentSender::class.java)
         // Set your bot silent sender to the mocked sender
         bot.setSilentSender(sender)
-        user = User.builder().id(Random.nextLong()).firstName("fname").lastName("lname").userName("uname").isBot(false)
-            .build()
     }
 
     @Test
     fun testWeather() {
+        var file = File("$resources/geocoding/GeoResponse_Sofia.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val update = mockFullUpdate("/weather today")
         bot.consume(update)
         verify(sender, times(1)).send("Please, provide your location first using /location <city>, [country]", user.id)
@@ -52,20 +65,29 @@ class WeatherBotTest {
             user.id
         )
 
+        file = File("$resources/weather/Sofia_BG_current.json")
+        mockResponse(file.readText(), httpClient = weatherHttpClient)
+        file = File("$resources/chatbot/GeminiResponse_current.json")
+        mockResponse(file.readText(), httpClient = geminiHttpClient)
         // Try to ask again with city set
         bot.consume(update)
-        // TODO: potentially flaky. We should ask the chat bot for some specific structure of the output, which can be tested
-        verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(user.id))
+        verify(sender, times(1)).sendMd(argThat { startsWith("I recommend you to") }, eq(user.id))
     }
 
     @Test
     fun testWeatherCommand_defaultValue() {
+        var file = File("$resources/geocoding/GeoResponse_Sofia.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val updateLocation = mockFullUpdate("/location Sofia")
         bot.consume(updateLocation)
 
+        file = File("$resources/weather/Sofia_BG_current.json")
+        mockResponse(file.readText(), httpClient = weatherHttpClient)
+        file = File("$resources/chatbot/GeminiResponse_current.json")
+        mockResponse(file.readText(), httpClient = geminiHttpClient)
         val update = mockFullUpdate("/weather")
         bot.consume(update)
-        verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(user.id))
+        verify(sender, times(1)).sendMd(argThat { startsWith("I recommend you to") }, eq(user.id))
     }
 
     @Test
@@ -94,6 +116,8 @@ class WeatherBotTest {
 
     @Test
     fun testLocationCommand_setThenUpdateLocation() {
+        var file = File("$resources/geocoding/GeoResponse_Sofia.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val update = mockFullUpdate("/location Sofia")
         bot.consume(update)
         verify(
@@ -104,6 +128,8 @@ class WeatherBotTest {
             user.id
         )
 
+        file = File("$resources/geocoding/GeoResponse_Plovdiv.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val update2 = mockFullUpdate("/location Plovdiv")
         bot.consume(update2)
         verify(sender, times(1)).send("Location updated from Sofia to Plovdiv", user.id)
@@ -115,6 +141,8 @@ class WeatherBotTest {
             user.id
         )
 
+        file = File("$resources/geocoding/GeoResponse_Tbilisi.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val update3 = mockFullUpdate("/location Tbilisi")
         bot.consume(update3)
         verify(sender, times(1)).send("Location updated from Plovdiv to Tbilisi", user.id)
@@ -129,6 +157,8 @@ class WeatherBotTest {
 
     @Test
     fun testLocationCommand_setCityWithCountry() {
+        val file = File("$resources/geocoding/GeoResponse_Sofia_BG.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val update = mockFullUpdate("/location Sofia, BG")
         bot.consume(update)
         verify(
@@ -153,6 +183,7 @@ class WeatherBotTest {
 
     @Test
     fun testLocationCommand_nonexistentCity() {
+        mockResponse(httpClient = geoHttpClient)
         val update = mockFullUpdate("/location NonexistentCity")
         bot.consume(update)
         verify(sender, times(1)).send(
@@ -167,6 +198,8 @@ class WeatherBotTest {
         bot.consume(restartUpdate)
         verify(sender, times(1)).send("No location was set", user.id)
 
+        val file = File("$resources/geocoding/GeoResponse_Sofia.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val updateLocation = mockFullUpdate("/location Sofia")
         bot.consume(updateLocation)
         val restartUpdate2 = mockFullUpdate("/restart")
@@ -234,24 +267,24 @@ class WeatherBotTest {
 
         val user: User = mockUser(fromUser)
 
-        val update = mock(Update::class.java)
-        `when`(update.hasMessage()).thenReturn(true)
-        val message = mock(Message::class.java)
-        `when`(message.from).thenReturn(user)
-        `when`(message.text).thenReturn(args)
-        `when`(message.hasText()).thenReturn(true)
-        `when`(message.isUserMessage).thenReturn(true)
-        `when`(message.chatId).thenReturn(fromUser.id)
-        `when`(update.message).thenReturn(message)
+        val update: Update = mock()
+        whenever(update.hasMessage()).thenReturn(true)
+        val message: Message = mock()
+        whenever(message.from).thenReturn(user)
+        whenever(message.text).thenReturn(args)
+        whenever(message.hasText()).thenReturn(true)
+        whenever(message.isUserMessage).thenReturn(true)
+        whenever(message.chatId).thenReturn(fromUser.id)
+        whenever(update.message).thenReturn(message)
         return update
     }
 
     private fun mockUser(fromUser: User): User {
-        val user = mock(User::class.java)
-        `when`(user.id).thenReturn(fromUser.id)
-        `when`(user.userName).thenReturn(fromUser.userName)
-        `when`(user.firstName).thenReturn(fromUser.firstName)
-        `when`(user.lastName).thenReturn(fromUser.lastName)
+        val user: User = mock()
+        whenever(user.id).thenReturn(fromUser.id)
+        whenever(user.userName).thenReturn(fromUser.userName)
+        whenever(user.firstName).thenReturn(fromUser.firstName)
+        whenever(user.lastName).thenReturn(fromUser.lastName)
 
         return user
     }

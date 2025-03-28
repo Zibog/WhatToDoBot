@@ -1,25 +1,23 @@
 package geocoding
 
+import base.HttpTestBase
 import com.dsidak.geocoding.GeocodingFetcher
 import okhttp3.Request
+import java.io.File
 import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class GeocodingFetcherTest {
-    private val geocodingFetcher = GeocodingFetcher()
+class GeocodingFetcherTest : HttpTestBase() {
+    private val geocodingFetcher = GeocodingFetcher(httpClient)
 
     @Test
     fun testExecuteRequest_onlyCity() {
-        val url = GeocodingFetcher.toUrl("Sofia")
-        val request = Request.Builder()
-            .url(url)
-            .header("charset", StandardCharsets.UTF_8.name())
-            .get()
-            .build()
+        val file = File("$resources/geocoding/GeoResponse_Sofia.json")
+        mockResponse(file.readText())
 
-        val response = geocodingFetcher.executeRequest(request)
+        val response = geocodingFetcher.executeRequest(DEFAULT_REQUEST)
 
         assert(response.isRight())
         val geoResponse = response.getOrNull()
@@ -33,14 +31,10 @@ class GeocodingFetcherTest {
 
     @Test
     fun testExecuteRequest_withCountry() {
-        val url = GeocodingFetcher.toUrl("Sofia", "BG")
-        val request = Request.Builder()
-            .url(url)
-            .header("charset", StandardCharsets.UTF_8.name())
-            .get()
-            .build()
+        val file = File("$resources/geocoding/GeoResponse_Sofia_BG.json")
+        mockResponse(file.readText())
 
-        val response = geocodingFetcher.executeRequest(request)
+        val response = geocodingFetcher.executeRequest(DEFAULT_REQUEST)
 
         assert(response.isRight())
         val geoResponse = response.getOrNull()
@@ -60,6 +54,8 @@ class GeocodingFetcherTest {
             .header("charset", StandardCharsets.UTF_8.name())
             .get()
             .build()
+
+        mockResponse()
 
         val response = geocodingFetcher.executeRequest(request)
 

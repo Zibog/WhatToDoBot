@@ -1,0 +1,34 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "I recommend you to embrace the moodiness of London's cloudy weather on March 30th with a self-guided \"Literary London\" walking tour."
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "avgLogprobs": -0.85047935982773593
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 94,
+    "candidatesTokenCount": 261,
+    "totalTokenCount": 355,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 94
+      }
+    ],
+    "candidatesTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 261
+      }
+    ]
+  },
+  "modelVersion": "gemini-2.0-flash"
+}

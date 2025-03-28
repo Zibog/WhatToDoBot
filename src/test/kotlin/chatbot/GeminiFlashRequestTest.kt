@@ -19,7 +19,7 @@ class GeminiFlashRequestTest : JsonTestBase {
             )
         )
         val jsonRequest = json.encodeToString(requestContent)
-        val file = File("$resources/GeminiRequest_simple.json")
+        val file = File("$resources/chatbot/GeminiRequest_simple.json")
         val expectedJson = file.readText()
         assertEquals(expectedJson, jsonRequest)
 
@@ -42,7 +42,7 @@ class GeminiFlashRequestTest : JsonTestBase {
             )
         )
         val jsonRequest = json.encodeToString(requestContent)
-        val file = File("$resources/GeminiRequest_Paris.json")
+        val file = File("$resources/chatbot/GeminiRequest_Paris.json")
         val expectedJson = file.readText()
         assertEquals(expectedJson, jsonRequest)
 

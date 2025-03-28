@@ -20,10 +20,12 @@ import okhttp3.Request
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 
-class WeatherFetcher(httpClient: OkHttpClient = OkHttpClient().newBuilder().build()) :
+class WeatherFetcher(
+    httpClient: OkHttpClient = OkHttpClient().newBuilder().build(),
+    private val geminiClient: GeminiClient = GeminiClient(httpClient)
+) :
     RequestExecutor<WeatherResponse>(httpClient) {
     private val log = KotlinLogging.logger {}
-    private val geminiClient = GeminiClient()
     private val json = Json { ignoreUnknownKeys = true }
 
     /**

@@ -11,12 +11,14 @@ val telegramBots: String by project
 val kotlinLogging: String by project
 val logback: String by project
 val mockito: String by project
+val mockitoKotlin: String by project
 val kotlinX: String by project
 val arrow: String by project
 val dotenv: String by project
 val ktor: String by project
 val exposedVersion: String by project
 val h2Version: String by project
+val hoplite: String by project
 
 val mockitoAgent = configurations.create("mockitoAgent")
 
@@ -54,17 +56,18 @@ dependencies {
     implementation("com.h2database:h2:$h2Version")
 
     // https://mvnrepository.com/artifact/com.sksamuel.hoplite/hoplite-core
-    implementation("com.sksamuel.hoplite:hoplite-core:2.9.0")
+    implementation("com.sksamuel.hoplite:hoplite-core:$hoplite")
     // https://mvnrepository.com/artifact/com.sksamuel.hoplite/hoplite-yaml
-    implementation("com.sksamuel.hoplite:hoplite-yaml:2.9.0")
+    implementation("com.sksamuel.hoplite:hoplite-yaml:$hoplite")
 
     testImplementation(kotlin("test"))
     // https://mvnrepository.com/artifact/org.mockito/mockito-core
     testImplementation("org.mockito:mockito-core:$mockito")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlin")
     mockitoAgent("org.mockito:mockito-core:$mockito") { isTransitive = false }
 }
 
-tasks.test {
+tasks.withType<Test> {
     useJUnitPlatform()
     jvmArgs("-javaagent:${mockitoAgent.asPath}")
 }
