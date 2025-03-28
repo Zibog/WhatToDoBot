@@ -3,8 +3,8 @@ package base
 import okhttp3.*
 import okhttp3.internal.http.RealResponseBody
 import okio.Buffer
-import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 abstract class HttpTestBase : ResourceTestBase {

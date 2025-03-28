@@ -8,8 +8,7 @@ import com.dsidak.geocoding.GeocodingFetcher
 import com.dsidak.weather.WeatherFetcher
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.Disabled
-import org.mockito.ArgumentMatchers
-import org.mockito.Mockito.*
+import org.mockito.kotlin.*
 import org.telegram.telegrambots.abilitybots.api.sender.SilentSender
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -41,7 +40,7 @@ class WeatherBotTest : HttpTestBase() {
         // Call onRegister() to initialize abilities etc.
         bot.onRegister()
         // Create a new sender as a mock
-        sender = mock(SilentSender::class.java)
+        sender = mock()
         // Set your bot silent sender to the mocked sender
         bot.setSilentSender(sender)
         user = User.builder().id(Random.nextLong()).firstName("fname").lastName("lname").userName("uname").isBot(false)
@@ -72,8 +71,7 @@ class WeatherBotTest : HttpTestBase() {
         mockResponse(file.readText(), httpClient = geminiHttpClient)
         // Try to ask again with city set
         bot.consume(update)
-        // TODO: potentially flaky. We should ask the chat bot for some specific structure of the output, which can be tested
-        verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(user.id))
+        verify(sender, times(1)).sendMd(argThat { startsWith("I recommend you to") }, eq(user.id))
     }
 
     @Test
@@ -89,7 +87,7 @@ class WeatherBotTest : HttpTestBase() {
         mockResponse(file.readText(), httpClient = geminiHttpClient)
         val update = mockFullUpdate("/weather")
         bot.consume(update)
-        verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(user.id))
+        verify(sender, times(1)).sendMd(argThat { startsWith("I recommend you to") }, eq(user.id))
     }
 
     @Test
@@ -269,24 +267,24 @@ class WeatherBotTest : HttpTestBase() {
 
         val user: User = mockUser(fromUser)
 
-        val update = mock(Update::class.java)
-        `when`(update.hasMessage()).thenReturn(true)
-        val message = mock(Message::class.java)
-        `when`(message.from).thenReturn(user)
-        `when`(message.text).thenReturn(args)
-        `when`(message.hasText()).thenReturn(true)
-        `when`(message.isUserMessage).thenReturn(true)
-        `when`(message.chatId).thenReturn(fromUser.id)
-        `when`(update.message).thenReturn(message)
+        val update: Update = mock()
+        whenever(update.hasMessage()).thenReturn(true)
+        val message: Message = mock()
+        whenever(message.from).thenReturn(user)
+        whenever(message.text).thenReturn(args)
+        whenever(message.hasText()).thenReturn(true)
+        whenever(message.isUserMessage).thenReturn(true)
+        whenever(message.chatId).thenReturn(fromUser.id)
+        whenever(update.message).thenReturn(message)
         return update
     }
 
     private fun mockUser(fromUser: User): User {
-        val user = mock(User::class.java)
-        `when`(user.id).thenReturn(fromUser.id)
-        `when`(user.userName).thenReturn(fromUser.userName)
-        `when`(user.firstName).thenReturn(fromUser.firstName)
-        `when`(user.lastName).thenReturn(fromUser.lastName)
+        val user: User = mock()
+        whenever(user.id).thenReturn(fromUser.id)
+        whenever(user.userName).thenReturn(fromUser.userName)
+        whenever(user.firstName).thenReturn(fromUser.firstName)
+        whenever(user.lastName).thenReturn(fromUser.lastName)
 
         return user
     }

@@ -2,7 +2,7 @@ package weather
 
 import base.HttpTestBase
 import com.dsidak.weather.WeatherFetcher
-import org.mockito.Mockito.`when`
+import org.mockito.kotlin.whenever
 import java.io.File
 import java.net.UnknownHostException
 import kotlin.test.Test
@@ -39,8 +39,8 @@ class WeatherFetcherTest : HttpTestBase() {
     @Test
     fun testExecuteRequest_noNetwork() {
         // Simulate a network error
-        `when`(httpClient.newCall(DEFAULT_REQUEST)).thenReturn(call)
-        `when`(httpClient.newCall(DEFAULT_REQUEST).execute()).thenThrow(UnknownHostException())
+        whenever(httpClient.newCall(DEFAULT_REQUEST)).thenReturn(call)
+        whenever(httpClient.newCall(DEFAULT_REQUEST).execute()).thenThrow(UnknownHostException())
         val offlineWeatherFetcher = WeatherFetcher(httpClient)
 
         val response = offlineWeatherFetcher.executeRequest(DEFAULT_REQUEST)
