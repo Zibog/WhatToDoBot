@@ -12,6 +12,7 @@ import com.google.common.base.Predicates
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
+import org.telegram.telegrambots.abilitybots.api.db.MapDBContext
 import org.telegram.telegrambots.abilitybots.api.objects.Ability
 import org.telegram.telegrambots.abilitybots.api.objects.Locality
 import org.telegram.telegrambots.abilitybots.api.objects.Privacy
@@ -20,9 +21,34 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.time.LocalDate
 import java.util.*
 
-class WeatherBot(telegramClient: TelegramClient, botUsername: String) :
-    AbilityBot(telegramClient, botUsername) {
+class WeatherBot :
+    AbilityBot {
+    constructor(telegramClient: TelegramClient, botUsername: String) : super(
+        telegramClient,
+        botUsername,
+        MapDBContext.offlineInstance("${botUsername}DB")
+    ) {
+        this.weatherFetcher = WeatherFetcher()
+        this.geocodingFetcher = GeocodingFetcher()
+    }
+
+    constructor(
+        telegramClient: TelegramClient,
+        botUsername: String,
+        weatherFetcher: WeatherFetcher,
+        geocodingFetcher: GeocodingFetcher
+    ) : super(
+        telegramClient,
+        botUsername,
+        MapDBContext.offlineInstance("${botUsername}DB")
+    ) {
+        this.weatherFetcher = weatherFetcher
+        this.geocodingFetcher = geocodingFetcher
+    }
+
     private val log = KotlinLogging.logger {}
+    private val weatherFetcher: WeatherFetcher
+    private val geocodingFetcher: GeocodingFetcher
 
     /**
      * Returns the creator ID of the bot.
@@ -85,7 +111,7 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String) :
                 log.debug { "Location is $location" }
 
                 val responseToUser = try {
-                    WeatherFetcher().fetchWeather(location.get().city, dateWithOffset)
+                    weatherFetcher.fetchWeather(location.get().city, dateWithOffset)
                 } catch (e: IllegalArgumentException) {
                     "Wrong input data: ${e.message}"
                 } catch (e: Exception) {
@@ -110,20 +136,16 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String) :
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
             .action { ctx ->
-                if (ctx.arguments().isEmpty()) {
+                val args = extractCityAndCountry(ctx.arguments())
+                if (args == null) {
                     silent.send("Sorry, this feature requires 1 or 2 additional inputs.", ctx.chatId())
                     return@action
                 }
-                val city = ctx.arguments()[0]
-                val country = if (ctx.arguments().size == 2) {
-                    ctx.arguments()[1]
-                } else {
-                    silent.send("Sorry, this feature requires 1 or 2 additional inputs.", ctx.chatId())
-                    ""
-                }
+                val city = args.first
+                val country = args.second
                 log.debug { "Received location=$city, $country" }
                 // TODO: check if the location is already in DB
-                val cityInfo = GeocodingFetcher().fetchCoordinates(city, country)
+                val cityInfo = geocodingFetcher.fetchCoordinates(city, country)
                 if (cityInfo == CityInfo.EMPTY) {
                     silent.send("No results found for the city $city. Try to specify the country", ctx.chatId())
                     return@action
@@ -151,6 +173,14 @@ class WeatherBot(telegramClient: TelegramClient, botUsername: String) :
                 }
             }
             .build()
+    }
+
+    private fun extractCityAndCountry(args: Array<String>): Pair<String, String>? {
+        return when (args.size) {
+            1 -> Pair(args[0].removeSuffix(","), "")
+            2 -> Pair(args[0].removeSuffix(","), args[1])
+            else -> null
+        }
     }
 
     /**

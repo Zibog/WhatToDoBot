@@ -40,7 +40,7 @@ class GeocodingFetcher(httpClient: OkHttpClient = OkHttpClient().newBuilder().bu
 
     override fun parseResponse(body: String): Either<String, List<CityInfo>> {
         return try {
-            log.info { "Parsing geocoding response" }
+            log.info { "Parsing geocoding response: $body" }
             val cityInfos = json.decodeFromString<List<CityInfo>>(body)
             if (cityInfos.isEmpty()) {
                 val message = "No results found for the given city"

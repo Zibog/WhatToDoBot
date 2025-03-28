@@ -11,6 +11,7 @@ val telegramBots: String by project
 val kotlinLogging: String by project
 val logback: String by project
 val mockito: String by project
+val mockitoKotlin: String by project
 val kotlinX: String by project
 val arrow: String by project
 val dotenv: String by project
@@ -62,10 +63,11 @@ dependencies {
     testImplementation(kotlin("test"))
     // https://mvnrepository.com/artifact/org.mockito/mockito-core
     testImplementation("org.mockito:mockito-core:$mockito")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlin")
     mockitoAgent("org.mockito:mockito-core:$mockito") { isTransitive = false }
 }
 
-tasks.test {
+tasks.withType<Test> {
     useJUnitPlatform()
     jvmArgs("-javaagent:${mockitoAgent.asPath}")
 }

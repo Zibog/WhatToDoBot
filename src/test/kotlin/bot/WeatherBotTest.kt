@@ -1,7 +1,12 @@
 package bot
 
+import base.HttpTestBase
 import com.dsidak.bot.WeatherBot
+import com.dsidak.chatbot.GeminiClient
 import com.dsidak.configuration.config
+import com.dsidak.geocoding.GeocodingFetcher
+import com.dsidak.weather.WeatherFetcher
+import okhttp3.OkHttpClient
 import org.junit.jupiter.api.Disabled
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.*
@@ -10,22 +15,29 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
+import java.io.File
 import kotlin.random.Random
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 
-class WeatherBotTest {
+class WeatherBotTest : HttpTestBase() {
     // Bot to test
     private lateinit var bot: WeatherBot
     // Sender to mock
     private lateinit var sender: SilentSender
     private lateinit var user: User
+    private val geminiHttpClient: OkHttpClient = mock()
+    private val weatherHttpClient: OkHttpClient = mock()
+    private val geoHttpClient: OkHttpClient = mock()
 
     @BeforeTest
     fun setUp() {
-        // Create bot with our offline DB
-        bot = WeatherBot(OkHttpTelegramClient(TOKEN), BOT_USERNAME + Random.nextInt())
+        // Create bot with mocked http client
+        val geminiClient = GeminiClient(geminiHttpClient)
+        val weatherFetcher = WeatherFetcher(weatherHttpClient, geminiClient)
+        val geocodingFetcher = GeocodingFetcher(geoHttpClient)
+        bot = WeatherBot(OkHttpTelegramClient(TOKEN), BOT_USERNAME + Random.nextInt(), weatherFetcher, geocodingFetcher)
         // Call onRegister() to initialize abilities etc.
         bot.onRegister()
         // Create a new sender as a mock
@@ -38,6 +50,8 @@ class WeatherBotTest {
 
     @Test
     fun testWeather() {
+        var file = File("$resources/geocoding/GeoResponse_Sofia.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val update = mockFullUpdate("/weather today")
         bot.consume(update)
         verify(sender, times(1)).send("Please, provide your location first using /location <city>, [country]", user.id)
@@ -52,6 +66,10 @@ class WeatherBotTest {
             user.id
         )
 
+        file = File("$resources/weather/Sofia_BG_current.json")
+        mockResponse(file.readText(), httpClient = weatherHttpClient)
+        file = File("$resources/chatbot/GeminiResponse_current.json")
+        mockResponse(file.readText(), httpClient = geminiHttpClient)
         // Try to ask again with city set
         bot.consume(update)
         // TODO: potentially flaky. We should ask the chat bot for some specific structure of the output, which can be tested
@@ -60,9 +78,15 @@ class WeatherBotTest {
 
     @Test
     fun testWeatherCommand_defaultValue() {
+        var file = File("$resources/geocoding/GeoResponse_Sofia.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val updateLocation = mockFullUpdate("/location Sofia")
         bot.consume(updateLocation)
 
+        file = File("$resources/weather/Sofia_BG_current.json")
+        mockResponse(file.readText(), httpClient = weatherHttpClient)
+        file = File("$resources/chatbot/GeminiResponse_current.json")
+        mockResponse(file.readText(), httpClient = geminiHttpClient)
         val update = mockFullUpdate("/weather")
         bot.consume(update)
         verify(sender, times(1)).sendMd(ArgumentMatchers.startsWith("I recommend you to"), eq(user.id))
@@ -94,6 +118,8 @@ class WeatherBotTest {
 
     @Test
     fun testLocationCommand_setThenUpdateLocation() {
+        var file = File("$resources/geocoding/GeoResponse_Sofia.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val update = mockFullUpdate("/location Sofia")
         bot.consume(update)
         verify(
@@ -104,6 +130,8 @@ class WeatherBotTest {
             user.id
         )
 
+        file = File("$resources/geocoding/GeoResponse_Plovdiv.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val update2 = mockFullUpdate("/location Plovdiv")
         bot.consume(update2)
         verify(sender, times(1)).send("Location updated from Sofia to Plovdiv", user.id)
@@ -115,6 +143,8 @@ class WeatherBotTest {
             user.id
         )
 
+        file = File("$resources/geocoding/GeoResponse_Tbilisi.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val update3 = mockFullUpdate("/location Tbilisi")
         bot.consume(update3)
         verify(sender, times(1)).send("Location updated from Plovdiv to Tbilisi", user.id)
@@ -129,6 +159,8 @@ class WeatherBotTest {
 
     @Test
     fun testLocationCommand_setCityWithCountry() {
+        val file = File("$resources/geocoding/GeoResponse_Sofia_BG.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val update = mockFullUpdate("/location Sofia, BG")
         bot.consume(update)
         verify(
@@ -153,6 +185,7 @@ class WeatherBotTest {
 
     @Test
     fun testLocationCommand_nonexistentCity() {
+        mockResponse(httpClient = geoHttpClient)
         val update = mockFullUpdate("/location NonexistentCity")
         bot.consume(update)
         verify(sender, times(1)).send(
@@ -167,6 +200,8 @@ class WeatherBotTest {
         bot.consume(restartUpdate)
         verify(sender, times(1)).send("No location was set", user.id)
 
+        val file = File("$resources/geocoding/GeoResponse_Sofia.json")
+        mockResponse(file.readText(), httpClient = geoHttpClient)
         val updateLocation = mockFullUpdate("/location Sofia")
         bot.consume(updateLocation)
         val restartUpdate2 = mockFullUpdate("/restart")
