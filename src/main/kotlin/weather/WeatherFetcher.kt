@@ -19,6 +19,11 @@ import okhttp3.Request
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 
+/**
+ * Class responsible for fetching weather data.
+ *
+ * @property httpClient the HTTP client used for making requests
+ */
 class WeatherFetcher(
     httpClient: OkHttpClient = OkHttpClient().newBuilder().build()
 ) : RequestExecutor<WeatherResponse>(httpClient) {
@@ -30,7 +35,7 @@ class WeatherFetcher(
      *
      * @param city the name of the city
      * @param date the date for which to fetch the weather
-     * @return a string containing the weather data
+     * @return either an error description or [WeatherResponse] containing the weather data
      */
     fun fetchWeather(city: String, date: LocalDate): Either<String, WeatherResponse> {
         val location = runBlocking {
@@ -96,7 +101,7 @@ class WeatherFetcher(
 
     companion object {
         /**
-         * Constructs the URL for the weather API request.
+         * Constructs the URL for the weather API request using city name.
          *
          * @param city the name of the city
          * @param date the date for which to fetch the weather
@@ -108,6 +113,14 @@ class WeatherFetcher(
                 .build()
         }
 
+        /**
+         * Constructs the URL for the weather API request using coordinates.
+         *
+         * @param latitude the latitude of the location
+         * @param longitude the longitude of the location
+         * @param date the date for which to fetch the weather
+         * @return the constructed URL
+         */
         internal fun toUrl(latitude: Double, longitude: Double, date: LocalDate): HttpUrl {
             return buildUrlBase(date)
                 .addQueryParameter("lat", latitude.toString())
@@ -115,6 +128,12 @@ class WeatherFetcher(
                 .build()
         }
 
+        /**
+         * Builds the base URL for the weather API request.
+         *
+         * @param date the date for which to fetch the weather
+         * @return the base URL builder
+         */
         private fun buildUrlBase(date: LocalDate): HttpUrl.Builder {
             val offset = date.toEpochDay() - LocalDate.now().toEpochDay()
             val endpoint = when (offset) {

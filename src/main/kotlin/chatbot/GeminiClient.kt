@@ -14,12 +14,24 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
+/**
+ * Client for interacting with the Gemini API to generate content based on weather data.
+ *
+ * @property httpClient the HTTP client used for making requests
+ */
 class GeminiClient(
     httpClient: OkHttpClient = OkHttpClient().newBuilder().callTimeout(config.requestTimeout, TimeUnit.SECONDS).build()
 ) : RequestExecutor<GeminiFlashResponse>(httpClient) {
     private val log = KotlinLogging.logger {}
     private val json = Json { ignoreUnknownKeys = true }
 
+    /**
+     * Generates content based on the provided weather data and date.
+     *
+     * @param weather the weather data
+     * @param date the date for which to generate content
+     * @return the generated content as a string
+     */
     fun generateContent(weather: WeatherResponse, date: LocalDate): String {
         val content = """
             |Weather in ${weather.cityName}, ${weather.country}:
@@ -71,7 +83,15 @@ class GeminiClient(
     }
 
     companion object {
-        fun toUrl(url: String, model: String, action: String): String {
+        /**
+         * Constructs the URL for the Gemini API request.
+         *
+         * @param url the base URL
+         * @param model the model name
+         * @param action the action name
+         * @return the constructed URL as a string
+         */
+        internal fun toUrl(url: String, model: String, action: String): String {
             return "$url/$model:$action?key=${dotenv["GEMINI_API_KEY"]}"
         }
     }

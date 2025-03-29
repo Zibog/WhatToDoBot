@@ -24,18 +24,34 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.time.LocalDate
 import java.util.*
 
-class WeatherBot :
-    AbilityBot {
+/**
+ * Telegram bot for providing weather information and recommendations based on weather data.
+ * Converts city names to coordinates and fetches weather data, then generates content using the Gemini API.
+ */
+class WeatherBot : AbilityBot {
+    /**
+     * Primary constructor for WeatherBot.
+     *
+     * @param telegramClient the Telegram client
+     * @param botUsername the bot's username
+     */
     constructor(telegramClient: TelegramClient, botUsername: String) : super(
-        telegramClient,
-        botUsername,
-        MapDBContext.offlineInstance("${botUsername}DB")
+        telegramClient, botUsername, MapDBContext.offlineInstance("${botUsername}DB")
     ) {
         this.weatherFetcher = WeatherFetcher()
         this.geocodingFetcher = GeocodingFetcher()
         this.geminiClient = GeminiClient()
     }
 
+    /**
+     * Secondary constructor for WeatherBot with dependencies.
+     *
+     * @param telegramClient the Telegram client
+     * @param botUsername the bot's username
+     * @param weatherFetcher the weather fetcher instance
+     * @param geocodingFetcher the geocoding fetcher instance
+     * @param geminiClient the Gemini client instance
+     */
     constructor(
         telegramClient: TelegramClient,
         botUsername: String,
@@ -43,9 +59,7 @@ class WeatherBot :
         geocodingFetcher: GeocodingFetcher,
         geminiClient: GeminiClient
     ) : super(
-        telegramClient,
-        botUsername,
-        MapDBContext.offlineInstance("${botUsername}DB")
+        telegramClient, botUsername, MapDBContext.offlineInstance("${botUsername}DB")
     ) {
         this.weatherFetcher = weatherFetcher
         this.geocodingFetcher = geocodingFetcher
@@ -77,6 +91,7 @@ class WeatherBot :
 
     /**
      * Creates an ability that provides weather information for a specified date.
+     * If no date is provided, it defaults to today.
      *
      * @return the weather ability
      */
@@ -192,6 +207,12 @@ class WeatherBot :
         }
     }
 
+    /**
+     * Extracts the city and country from the arguments.
+     *
+     * @param args the arguments array
+     * @return [Pair] containing the city and country, or null if the arguments are invalid
+     */
     private fun extractCityAndCountry(args: Array<String>): Pair<String, String>? {
         return when (args.size) {
             1 -> Pair(args[0].removeSuffix(","), "")
@@ -244,6 +265,11 @@ class WeatherBot :
         return Optional.ofNullable(oldLocation)
     }
 
+    /**
+     * Creates an ability that drops the user's location.
+     *
+     * @return the restart ability
+     */
     @Suppress("unused")
     fun restartCommand(): Ability {
         return Ability.builder()
@@ -275,6 +301,11 @@ class WeatherBot :
         }
     }
 
+    /**
+     * Creates an ability that shows the list of available commands with usages.
+     *
+     * @return the help ability
+     */
     @Suppress("unused")
     fun helpCommand(): Ability {
         return Ability.builder()
@@ -307,6 +338,11 @@ class WeatherBot :
         silent.sendMd(message, ctx.chatId())
     }
 
+    /**
+     * Creates an ability that handles non-command input.
+     *
+     * @return the default ability
+     */
     @Suppress("unused")
     fun defaultCommand(): Ability {
         return Ability.builder()
