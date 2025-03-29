@@ -30,15 +30,6 @@ class CommandHandler(
 
         log.debug { "Check the weather for date=$dateWithOffset" }
         val location = runBlocking {
-            val tgUser = ctx.user()
-            DatabaseManager.createOrReadUser(
-                User(
-                    tgUser.id,
-                    tgUser.firstName,
-                    tgUser.lastName,
-                    tgUser.userName
-                )
-            )
             readLocation(ctx.user().id)
         }
         if (location == null) {
@@ -60,7 +51,6 @@ class CommandHandler(
         } else {
             geminiClient.generateContent(weatherResponse.getOrNull()!!, dateWithOffset)
         }
-        log.debug { "Response to user: $responseToUser" }
         return responseToUser
     }
 
@@ -71,7 +61,7 @@ class CommandHandler(
      * @return a [Location] containing the location of the user if it exists in DB, otherwise null
      */
     private suspend fun readLocation(userId: Long): Location? {
-        val user = DatabaseManager.userService.read(userId)!!
+        val user = DatabaseManager.userService.read(userId) ?: return null
         return if (user.locationId != null) {
             DatabaseManager.locationService.read(user.locationId)
         } else {
@@ -103,14 +93,12 @@ class CommandHandler(
             )
             updateLocation(ctx.user().id, cityInfo)
         }
-        val helperMessage =
-            "Location is set to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, please state city and two-letter-length country code separated by comma."
-        return if (previousLocation == null) {
-            helperMessage
+        val action = if (previousLocation == null) {
+            "set"
         } else {
-            // TODO: remove this mess and fix WeatherBotTest#testLocationCommand_setThenUpdateLocation
-            "Location updated from ${previousLocation.city} to $city\n$helperMessage"
+            "updated from ${previousLocation.city}, ${previousLocation.country}"
         }
+        return "Location $action to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, set it using /location <city>, <country>."
     }
 
     /**

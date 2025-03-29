@@ -69,7 +69,7 @@ class WeatherBotTest : HttpTestBase() {
             sender,
             times(1)
         ).sendMd(
-            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            "Location set to Sofia, BG. If location is wrong, set it using /location <city>, <country>.",
             user.id
         )
 
@@ -132,7 +132,7 @@ class WeatherBotTest : HttpTestBase() {
             sender,
             times(1)
         ).sendMd(
-            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            "Location set to Sofia, BG. If location is wrong, set it using /location <city>, <country>.",
             user.id
         )
 
@@ -144,7 +144,7 @@ class WeatherBotTest : HttpTestBase() {
             sender,
             times(1)
         ).sendMd(
-            "Location updated from Sofia to Plovdiv\nLocation is set to Plovdiv, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            "Location updated from Sofia, BG to Plovdiv, BG. If location is wrong, set it using /location <city>, <country>.",
             user.id
         )
 
@@ -156,7 +156,7 @@ class WeatherBotTest : HttpTestBase() {
             sender,
             times(1)
         ).sendMd(
-            "Location updated from Plovdiv to Tbilisi\nLocation is set to Tbilisi, GE. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            "Location updated from Plovdiv, BG to Tbilisi, GE. If location is wrong, set it using /location <city>, <country>.",
             user.id
         )
     }
@@ -171,7 +171,7 @@ class WeatherBotTest : HttpTestBase() {
             sender,
             times(1)
         ).sendMd(
-            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+            "Location set to Sofia, BG. If location is wrong, set it using /location <city>, <country>.",
             user.id
         )
     }
