@@ -28,48 +28,16 @@ import java.util.*
  * Telegram bot for providing weather information and recommendations based on weather data.
  * Converts city names to coordinates and fetches weather data, then generates content using the Gemini API.
  */
-class WeatherBot : AbilityBot {
-    /**
-     * Primary constructor for WeatherBot.
-     *
-     * @param telegramClient the Telegram client
-     * @param botUsername the bot's username
-     */
-    constructor(telegramClient: TelegramClient, botUsername: String) : super(
-        telegramClient, botUsername, MapDBContext.offlineInstance("${botUsername}DB")
-    ) {
-        this.weatherFetcher = WeatherFetcher()
-        this.geocodingFetcher = GeocodingFetcher()
-        this.geminiClient = GeminiClient()
-    }
-
-    /**
-     * Secondary constructor for WeatherBot with dependencies.
-     *
-     * @param telegramClient the Telegram client
-     * @param botUsername the bot's username
-     * @param weatherFetcher the weather fetcher instance
-     * @param geocodingFetcher the geocoding fetcher instance
-     * @param geminiClient the Gemini client instance
-     */
-    constructor(
-        telegramClient: TelegramClient,
-        botUsername: String,
-        weatherFetcher: WeatherFetcher,
-        geocodingFetcher: GeocodingFetcher,
-        geminiClient: GeminiClient
-    ) : super(
-        telegramClient, botUsername, MapDBContext.offlineInstance("${botUsername}DB")
-    ) {
-        this.weatherFetcher = weatherFetcher
-        this.geocodingFetcher = geocodingFetcher
-        this.geminiClient = geminiClient
-    }
-
+class WeatherBot(
+    telegramClient: TelegramClient,
+    botUsername: String,
+    private val weatherFetcher: WeatherFetcher = WeatherFetcher(),
+    private val geocodingFetcher: GeocodingFetcher = GeocodingFetcher(),
+    private val geminiClient: GeminiClient = GeminiClient()
+) : AbilityBot(
+    telegramClient, botUsername, MapDBContext.offlineInstance("${botUsername}DB")
+) {
     private val log = KotlinLogging.logger {}
-    private val weatherFetcher: WeatherFetcher
-    private val geocodingFetcher: GeocodingFetcher
-    private val geminiClient: GeminiClient
 
     /**
      * Returns the creator ID of the bot.
