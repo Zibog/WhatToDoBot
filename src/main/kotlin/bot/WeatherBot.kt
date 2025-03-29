@@ -55,6 +55,7 @@ class WeatherBot(
             .info("Request weather for the day")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
+            .enableStats()
             .action { ctx ->
                 val responseToUser = commandHandler.handleWeatherCommand(ctx)
                 log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
@@ -75,6 +76,7 @@ class WeatherBot(
             .info("Set location for the request")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
+            .enableStats()
             .action { ctx ->
                 val responseToUser = commandHandler.handleLocationCommand(ctx)
                 log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
@@ -95,6 +97,7 @@ class WeatherBot(
             .info("Drops your location")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
+            .enableStats()
             .action { ctx ->
                 val responseToUser = commandHandler.handleRestartCommand(ctx)
                 log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
@@ -115,6 +118,7 @@ class WeatherBot(
             .info("Shows the list of available commands")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
+            .enableStats()
             .action { ctx ->
                 val responseToUser = commandHandler.handleHelpCommand()
                 log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
@@ -135,6 +139,7 @@ class WeatherBot(
             .flag(Predicates.alwaysTrue())
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
+            .enableStats()
             .action { ctx ->
                 val responseToUser = commandHandler.handleDefault()
                 log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
