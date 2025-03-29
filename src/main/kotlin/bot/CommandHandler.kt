@@ -70,8 +70,8 @@ class CommandHandler(
     }
 
     internal fun handleLocationCommand(ctx: MessageContext): String {
-        val args =
-            extractCityAndCountry(ctx.arguments()) ?: return "Sorry, this feature requires 1 or 2 additional inputs."
+        val args = extractCityAndCountry(ctx.arguments())
+            ?: return "Sorry, this feature requires 1 or 2 additional inputs."
         val city = args.first
         val country = args.second
         log.debug { "Received location=$city, $country" }
@@ -82,15 +82,7 @@ class CommandHandler(
         }
         log.info { "Checked geolocation of $city: $cityInfo" }
         val previousLocation = runBlocking {
-            val tgUser = ctx.user()
-            DatabaseManager.createOrReadUser(
-                User(
-                    tgUser.id,
-                    tgUser.firstName,
-                    tgUser.lastName,
-                    tgUser.userName
-                )
-            )
+            DatabaseManager.createOrReadUser(ctx.user().toUser())
             updateLocation(ctx.user().id, cityInfo)
         }
         val action = if (previousLocation == null) {
@@ -146,15 +138,7 @@ class CommandHandler(
 
     internal fun handleRestartCommand(ctx: MessageContext): String {
         val previousLocation = runBlocking {
-            val tgUser = ctx.user()
-            DatabaseManager.createOrReadUser(
-                User(
-                    tgUser.id,
-                    tgUser.firstName,
-                    tgUser.lastName,
-                    tgUser.userName
-                )
-            )
+            DatabaseManager.createOrReadUser(ctx.user().toUser())
             updateLocation(ctx.user().id, null)
         }
         return if (previousLocation == null) {
@@ -210,6 +194,15 @@ class CommandHandler(
             }
 
             return null
+        }
+
+        private fun org.telegram.telegrambots.meta.api.objects.User.toUser(): User {
+            return User(
+                id = this.id,
+                firstName = this.firstName,
+                lastName = this.lastName,
+                userName = this.userName
+            )
         }
     }
 }
