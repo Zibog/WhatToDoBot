@@ -37,10 +37,16 @@ class WeatherBotTest : HttpTestBase() {
 
     init {
         // Create bot with mocked http client
-        val geminiClient = GeminiClient(geminiHttpClient)
-        val weatherFetcher = WeatherFetcher(weatherHttpClient, geminiClient)
+        val weatherFetcher = WeatherFetcher(weatherHttpClient)
         val geocodingFetcher = GeocodingFetcher(geoHttpClient)
-        bot = WeatherBot(OkHttpTelegramClient(TOKEN), BOT_USERNAME + Random.nextInt(), weatherFetcher, geocodingFetcher)
+        val geminiClient = GeminiClient(geminiHttpClient)
+        bot = WeatherBot(
+            OkHttpTelegramClient(TOKEN),
+            BOT_USERNAME + Random.nextInt(),
+            weatherFetcher,
+            geocodingFetcher,
+            geminiClient
+        )
         // Call onRegister() to initialize abilities etc.
         bot.onRegister()
         // Set your bot silent sender to the mocked sender

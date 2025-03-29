@@ -1,5 +1,7 @@
 package com.dsidak.bot
 
+import arrow.core.Either
+import com.dsidak.chatbot.GeminiClient
 import com.dsidak.configuration.config
 import com.dsidak.db.DatabaseManager
 import com.dsidak.db.schemas.Location
@@ -30,13 +32,15 @@ class WeatherBot :
     ) {
         this.weatherFetcher = WeatherFetcher()
         this.geocodingFetcher = GeocodingFetcher()
+        this.geminiClient = GeminiClient()
     }
 
     constructor(
         telegramClient: TelegramClient,
         botUsername: String,
         weatherFetcher: WeatherFetcher,
-        geocodingFetcher: GeocodingFetcher
+        geocodingFetcher: GeocodingFetcher,
+        geminiClient: GeminiClient
     ) : super(
         telegramClient,
         botUsername,
@@ -44,11 +48,13 @@ class WeatherBot :
     ) {
         this.weatherFetcher = weatherFetcher
         this.geocodingFetcher = geocodingFetcher
+        this.geminiClient = geminiClient
     }
 
     private val log = KotlinLogging.logger {}
     private val weatherFetcher: WeatherFetcher
     private val geocodingFetcher: GeocodingFetcher
+    private val geminiClient: GeminiClient
 
     /**
      * Returns the creator ID of the bot.
@@ -110,12 +116,18 @@ class WeatherBot :
 
                 log.debug { "Location is $location" }
 
-                val responseToUser = try {
+                val weatherResponse = try {
                     weatherFetcher.fetchWeather(location.get().city, dateWithOffset)
                 } catch (e: IllegalArgumentException) {
-                    "Wrong input data: ${e.message}"
+                    Either.Left("Wrong input data: ${e.message}")
                 } catch (e: Exception) {
-                    "Unexpected error: ${e.message}"
+                    Either.Left("Unexpected error: ${e.message}")
+                }
+
+                val responseToUser = if (weatherResponse.isLeft()) {
+                    weatherResponse.leftOrNull()!!
+                } else {
+                    geminiClient.generateContent(weatherResponse.getOrNull()!!, dateWithOffset)
                 }
                 log.debug { "Response to user: $responseToUser" }
                 silent.sendMd(responseToUser, ctx.chatId())

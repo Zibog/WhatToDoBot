@@ -1,7 +1,6 @@
 package com.dsidak.weather
 
 import arrow.core.Either
-import com.dsidak.chatbot.GeminiClient
 import com.dsidak.configuration.config
 import com.dsidak.db.DatabaseManager
 import com.dsidak.db.schemas.Location
@@ -21,10 +20,8 @@ import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 
 class WeatherFetcher(
-    httpClient: OkHttpClient = OkHttpClient().newBuilder().build(),
-    private val geminiClient: GeminiClient = GeminiClient(httpClient)
-) :
-    RequestExecutor<WeatherResponse>(httpClient) {
+    httpClient: OkHttpClient = OkHttpClient().newBuilder().build()
+) : RequestExecutor<WeatherResponse>(httpClient) {
     private val log = KotlinLogging.logger {}
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -35,7 +32,7 @@ class WeatherFetcher(
      * @param date the date for which to fetch the weather
      * @return a string containing the weather data
      */
-    fun fetchWeather(city: String, date: LocalDate): String {
+    fun fetchWeather(city: String, date: LocalDate): Either<String, WeatherResponse> {
         val location = runBlocking {
             DatabaseManager.locationService.readByCity(city)
         }
@@ -54,7 +51,7 @@ class WeatherFetcher(
             .build()
 
         val response = executeRequest(request).fold(
-            { errorDescription: String -> return errorDescription },
+            { errorDescription: String -> return Either.Left(errorDescription) },
             { response: WeatherResponse -> return@fold response }
         )
 
@@ -73,8 +70,7 @@ class WeatherFetcher(
             }
         }
 
-        val geminiResponse = geminiClient.generateContent(response, date)
-        return geminiResponse
+        return Either.Right(response)
     }
 
     override fun parseResponse(body: String): Either<String, WeatherResponse> {
