@@ -45,7 +45,7 @@ class WeatherFetcher(
             log.info { "Using coordinates '${location.latitude}, ${location.longitude}' of ${location.city}" }
             toUrl(location.latitude, location.longitude, date)
         } else {
-            log.info { "Location not found in DB, will fetch from API" }
+            log.info { "Location for $city not found in DB, will fetch from API" }
             toUrl(city, date)
         }
 
