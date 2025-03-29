@@ -1,6 +1,7 @@
 package bot
 
 import base.HttpTestBase
+import com.dsidak.bot.CommandHandler
 import com.dsidak.bot.WeatherBot
 import com.dsidak.chatbot.GeminiClient
 import com.dsidak.configuration.config
@@ -43,9 +44,7 @@ class WeatherBotTest : HttpTestBase() {
         bot = WeatherBot(
             OkHttpTelegramClient(TOKEN),
             BOT_USERNAME + Random.nextInt(),
-            weatherFetcher,
-            geocodingFetcher,
-            geminiClient
+            CommandHandler(weatherFetcher, geocodingFetcher, geminiClient)
         )
         // Call onRegister() to initialize abilities etc.
         bot.onRegister()
@@ -59,15 +58,18 @@ class WeatherBotTest : HttpTestBase() {
         mockResponse(file.readText(), httpClient = geoHttpClient)
         val update = mockFullUpdate("/weather today")
         bot.consume(update)
-        verify(sender, times(1)).send("Please, provide your location first using /location <city>, [country]", user.id)
+        verify(sender, times(1)).sendMd(
+            "Please, provide your location first using /location <city>, [country]",
+            user.id
+        )
 
         val updateLocation = mockFullUpdate("/location Sofia")
         bot.consume(updateLocation)
         verify(
             sender,
             times(1)
-        ).send(
-            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+        ).sendMd(
+            "Location set to Sofia, BG. If location is wrong, set it using /location <city>, <country>.",
             user.id
         )
 
@@ -100,24 +102,24 @@ class WeatherBotTest : HttpTestBase() {
     fun testWeatherCommand_invalidArgument() {
         val invalidArgUpdate = mockFullUpdate("/weather yesterday")
         bot.consume(invalidArgUpdate)
-        verify(sender, times(1)).send("Invalid argument 'yesterday'. Please, provide valid offset", user.id)
+        verify(sender, times(1)).sendMd("Invalid argument 'yesterday'. Please, provide valid offset", user.id)
 
         val invalidArgUpdate2 = mockFullUpdate("/weather 666")
         bot.consume(invalidArgUpdate2)
-        verify(sender, times(1)).send("Invalid argument '666'. Please, provide valid offset", user.id)
+        verify(sender, times(1)).sendMd("Invalid argument '666'. Please, provide valid offset", user.id)
 
         val invalidArgUpdate3 = mockFullUpdate("/weather -1")
         bot.consume(invalidArgUpdate3)
-        verify(sender, times(1)).send("Invalid argument '-1'. Please, provide valid offset", user.id)
+        verify(sender, times(1)).sendMd("Invalid argument '-1'. Please, provide valid offset", user.id)
 
         val outOfBound = config.upperBound + 1
         val invalidArgUpdate4 = mockFullUpdate("/weather $outOfBound")
         bot.consume(invalidArgUpdate4)
-        verify(sender, times(1)).send("Invalid argument '$outOfBound'. Please, provide valid offset", user.id)
+        verify(sender, times(1)).sendMd("Invalid argument '$outOfBound'. Please, provide valid offset", user.id)
 
         val multipleArgsUpdate = mockFullUpdate("/weather 9 9 9")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(1)).send("Invalid argument '9'. Please, provide valid offset", user.id)
+        verify(sender, times(1)).sendMd("Invalid argument '9'. Please, provide valid offset", user.id)
     }
 
     @Test
@@ -129,8 +131,8 @@ class WeatherBotTest : HttpTestBase() {
         verify(
             sender,
             times(1)
-        ).send(
-            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+        ).sendMd(
+            "Location set to Sofia, BG. If location is wrong, set it using /location <city>, <country>.",
             user.id
         )
 
@@ -138,12 +140,11 @@ class WeatherBotTest : HttpTestBase() {
         mockResponse(file.readText(), httpClient = geoHttpClient)
         val update2 = mockFullUpdate("/location Plovdiv")
         bot.consume(update2)
-        verify(sender, times(1)).send("Location updated from Sofia to Plovdiv", user.id)
         verify(
             sender,
             times(1)
-        ).send(
-            "Location is set to Plovdiv, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+        ).sendMd(
+            "Location updated from Sofia, BG to Plovdiv, BG. If location is wrong, set it using /location <city>, <country>.",
             user.id
         )
 
@@ -151,12 +152,11 @@ class WeatherBotTest : HttpTestBase() {
         mockResponse(file.readText(), httpClient = geoHttpClient)
         val update3 = mockFullUpdate("/location Tbilisi")
         bot.consume(update3)
-        verify(sender, times(1)).send("Location updated from Plovdiv to Tbilisi", user.id)
         verify(
             sender,
             times(1)
-        ).send(
-            "Location is set to Tbilisi, GE. If location is wrong, please state city and two-letter-length country code separated by comma.",
+        ).sendMd(
+            "Location updated from Plovdiv, BG to Tbilisi, GE. If location is wrong, set it using /location <city>, <country>.",
             user.id
         )
     }
@@ -170,8 +170,8 @@ class WeatherBotTest : HttpTestBase() {
         verify(
             sender,
             times(1)
-        ).send(
-            "Location is set to Sofia, BG. If location is wrong, please state city and two-letter-length country code separated by comma.",
+        ).sendMd(
+            "Location set to Sofia, BG. If location is wrong, set it using /location <city>, <country>.",
             user.id
         )
     }
@@ -180,11 +180,11 @@ class WeatherBotTest : HttpTestBase() {
     fun testLocationCommand_wrongArgumentsNumber() {
         val zeroArgUpdate = mockFullUpdate("/location")
         bot.consume(zeroArgUpdate)
-        verify(sender, times(1)).send("Sorry, this feature requires 1 or 2 additional inputs.", user.id)
+        verify(sender, times(1)).sendMd("Sorry, this feature requires 1 or 2 additional inputs.", user.id)
 
         val multipleArgsUpdate = mockFullUpdate("/location Tut Tam Sam")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(2)).send("Sorry, this feature requires 1 or 2 additional inputs.", user.id)
+        verify(sender, times(2)).sendMd("Sorry, this feature requires 1 or 2 additional inputs.", user.id)
     }
 
     @Test
@@ -192,7 +192,7 @@ class WeatherBotTest : HttpTestBase() {
         mockResponse(httpClient = geoHttpClient)
         val update = mockFullUpdate("/location NonexistentCity")
         bot.consume(update)
-        verify(sender, times(1)).send(
+        verify(sender, times(1)).sendMd(
             "No results found for the city NonexistentCity. Try to specify the country",
             user.id
         )
@@ -202,7 +202,7 @@ class WeatherBotTest : HttpTestBase() {
     fun testRestartCommand() {
         val restartUpdate = mockFullUpdate("/restart")
         bot.consume(restartUpdate)
-        verify(sender, times(1)).send("No location was set", user.id)
+        verify(sender, times(1)).sendMd("No location was set", user.id)
 
         val file = File("$resources/geocoding/GeoResponse_Sofia.json")
         mockResponse(file.readText(), httpClient = geoHttpClient)
@@ -210,11 +210,11 @@ class WeatherBotTest : HttpTestBase() {
         bot.consume(updateLocation)
         val restartUpdate2 = mockFullUpdate("/restart")
         bot.consume(restartUpdate2)
-        verify(sender, times(1)).send("Location dropped from Sofia", user.id)
+        verify(sender, times(1)).sendMd("Location dropped from Sofia", user.id)
 
         val restartUpdate3 = mockFullUpdate("/restart")
         bot.consume(restartUpdate3)
-        verify(sender, times(1)).send("No location was set", user.id)
+        verify(sender, times(1)).sendMd("No location was set", user.id)
     }
 
     @Test
