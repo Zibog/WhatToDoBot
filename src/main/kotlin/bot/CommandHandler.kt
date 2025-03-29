@@ -71,7 +71,7 @@ class CommandHandler(
 
     internal fun handleLocationCommand(ctx: MessageContext): String {
         val args = extractCityAndCountry(ctx.arguments())
-            ?: return "Sorry, this feature requires 1 or 2 additional inputs."
+            ?: return "Sorry, this feature requires 1 or 2 additional inputs"
         val city = args.first
         val country = args.second
         log.debug { "Received location=$city, $country" }
@@ -90,7 +90,7 @@ class CommandHandler(
         } else {
             "updated from ${previousLocation.city}, ${previousLocation.country}"
         }
-        return "Location $action to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, set it using /location <city>, <country>."
+        return "Location $action to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, set it using `/location <city>, <country>`"
     }
 
     /**
@@ -156,7 +156,7 @@ class CommandHandler(
             |This command is also used to update location.
             |The country is optional and should be a two-letter-length code.
             |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
-            |2. Request weather for the day using `/weather <offset>`
+            |2. Request weather for the day using `/weather [offset]`
             |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
             |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.
             |Examples: `/weather 0`, `/weather today`, `/weather tomorrow`, `/weather 3`

@@ -69,7 +69,7 @@ class WeatherBotTest : HttpTestBase() {
             sender,
             times(1)
         ).sendMd(
-            "Location set to Sofia, BG. If location is wrong, set it using /location <city>, <country>.",
+            "Location set to Sofia, BG. If location is wrong, set it using `/location <city>, <country>`",
             user.id
         )
 
@@ -132,7 +132,7 @@ class WeatherBotTest : HttpTestBase() {
             sender,
             times(1)
         ).sendMd(
-            "Location set to Sofia, BG. If location is wrong, set it using /location <city>, <country>.",
+            "Location set to Sofia, BG. If location is wrong, set it using `/location <city>, <country>`",
             user.id
         )
 
@@ -144,7 +144,7 @@ class WeatherBotTest : HttpTestBase() {
             sender,
             times(1)
         ).sendMd(
-            "Location updated from Sofia, BG to Plovdiv, BG. If location is wrong, set it using /location <city>, <country>.",
+            "Location updated from Sofia, BG to Plovdiv, BG. If location is wrong, set it using `/location <city>, <country>`",
             user.id
         )
 
@@ -156,7 +156,7 @@ class WeatherBotTest : HttpTestBase() {
             sender,
             times(1)
         ).sendMd(
-            "Location updated from Plovdiv, BG to Tbilisi, GE. If location is wrong, set it using /location <city>, <country>.",
+            "Location updated from Plovdiv, BG to Tbilisi, GE. If location is wrong, set it using `/location <city>, <country>`",
             user.id
         )
     }
@@ -171,7 +171,7 @@ class WeatherBotTest : HttpTestBase() {
             sender,
             times(1)
         ).sendMd(
-            "Location set to Sofia, BG. If location is wrong, set it using /location <city>, <country>.",
+            "Location set to Sofia, BG. If location is wrong, set it using `/location <city>, <country>`",
             user.id
         )
     }
@@ -180,11 +180,11 @@ class WeatherBotTest : HttpTestBase() {
     fun testLocationCommand_wrongArgumentsNumber() {
         val zeroArgUpdate = mockFullUpdate("/location")
         bot.consume(zeroArgUpdate)
-        verify(sender, times(1)).sendMd("Sorry, this feature requires 1 or 2 additional inputs.", user.id)
+        verify(sender, times(1)).sendMd("Sorry, this feature requires 1 or 2 additional inputs", user.id)
 
         val multipleArgsUpdate = mockFullUpdate("/location Tut Tam Sam")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(2)).sendMd("Sorry, this feature requires 1 or 2 additional inputs.", user.id)
+        verify(sender, times(2)).sendMd("Sorry, this feature requires 1 or 2 additional inputs", user.id)
     }
 
     @Test
@@ -229,7 +229,7 @@ class WeatherBotTest : HttpTestBase() {
             |This command is also used to update location.
             |The country is optional and should be a two-letter-length code.
             |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
-            |2. Request weather for the day using `/weather <offset>`
+            |2. Request weather for the day using `/weather [offset]`
             |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
             |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.
             |Examples: `/weather 0`, `/weather today`, `/weather tomorrow`, `/weather 3`
