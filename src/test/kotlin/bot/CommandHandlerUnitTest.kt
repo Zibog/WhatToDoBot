@@ -5,6 +5,7 @@ import com.dsidak.configuration.config
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class CommandHandlerUnitTest {
     @Test
@@ -19,10 +20,10 @@ class CommandHandlerUnitTest {
         assertEquals(LocalDate.of(2025, 2, 27), CommandHandler.offsetDate(date, config.upperBound.toString()))
 
         // Wrong offsets
-        assertEquals(LocalDate.EPOCH, CommandHandler.offsetDate(date, "yesterday"))
-        assertEquals(LocalDate.EPOCH, CommandHandler.offsetDate(date, "666"))
-        assertEquals(LocalDate.EPOCH, CommandHandler.offsetDate(date, "-1"))
-        assertEquals(LocalDate.EPOCH, CommandHandler.offsetDate(date, "-1"))
-        assertEquals(LocalDate.EPOCH, CommandHandler.offsetDate(date, (config.upperBound + 1).toString()))
+        assertNull(CommandHandler.offsetDate(date, "yesterday"))
+        assertNull(CommandHandler.offsetDate(date, "666"))
+        assertNull(CommandHandler.offsetDate(date, "-1"))
+        assertNull(CommandHandler.offsetDate(date, "-1"))
+        assertNull(CommandHandler.offsetDate(date, (config.upperBound + 1).toString()))
     }
 }

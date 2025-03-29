@@ -13,7 +13,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import java.time.LocalDate
-import java.util.*
 
 class CommandHandler(
     private val weatherFetcher: WeatherFetcher = WeatherFetcher(),
@@ -25,13 +24,11 @@ class CommandHandler(
     internal fun handleWeatherCommand(ctx: MessageContext): String {
         val inputArg = ctx.arguments().getOrElse(0) { "today" }
 
-        log.debug { "Going to parse arg=$inputArg" }
+        log.debug { "Going to parse offset arg=$inputArg" }
         val dateWithOffset = offsetDate(LocalDate.now(), inputArg)
-        if (dateWithOffset == LocalDate.EPOCH) {
-            return "Invalid argument '$inputArg'. Please, provide valid offset"
-        }
+            ?: return "Invalid argument '$inputArg'. Please, provide valid offset"
 
-        log.debug { "Check the weather for $dateWithOffset" }
+        log.debug { "Check the weather for date=$dateWithOffset" }
         val location = runBlocking {
             val tgUser = ctx.user()
             DatabaseManager.createOrReadUser(
@@ -44,14 +41,14 @@ class CommandHandler(
             )
             readLocation(ctx.user().id)
         }
-        if (location.isEmpty) {
+        if (location == null) {
             return "Please, provide your location first using /location <city>, [country]"
         }
 
         log.debug { "Location is $location" }
 
         val weatherResponse = try {
-            weatherFetcher.fetchWeather(location.get().city, dateWithOffset)
+            weatherFetcher.fetchWeather(location.city, dateWithOffset)
         } catch (e: IllegalArgumentException) {
             Either.Left("Wrong input data: ${e.message}")
         } catch (e: Exception) {
@@ -71,14 +68,14 @@ class CommandHandler(
      * Reads the location for a given user ID.
      *
      * @param userId the user ID
-     * @return an [Optional] containing the location if it exists, otherwise [Optional.empty]
+     * @return a [Location] containing the location of the user if it exists in DB, otherwise null
      */
-    private suspend fun readLocation(userId: Long): Optional<Location> {
+    private suspend fun readLocation(userId: Long): Location? {
         val user = DatabaseManager.userService.read(userId)!!
         return if (user.locationId != null) {
-            Optional.of(DatabaseManager.locationService.read(user.locationId)!!)
+            DatabaseManager.locationService.read(user.locationId)
         } else {
-            Optional.empty()
+            null
         }
     }
 
@@ -108,11 +105,11 @@ class CommandHandler(
         }
         val helperMessage =
             "Location is set to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, please state city and two-letter-length country code separated by comma."
-        return if (previousLocation.isEmpty) {
+        return if (previousLocation == null) {
             helperMessage
         } else {
             // TODO: remove this mess and fix WeatherBotTest#testLocationCommand_setThenUpdateLocation
-            "Location updated from ${previousLocation.get().city} to $city\n$helperMessage"
+            "Location updated from ${previousLocation.city} to $city\n$helperMessage"
         }
     }
 
@@ -135,9 +132,9 @@ class CommandHandler(
      *
      * @param userId the user ID
      * @param location the new location
-     * @return an [Optional] containing the previous location if it existed, otherwise [Optional.empty]
+     * @return a [Location] containing the previous location if it existed in DB, otherwise null
      */
-    private suspend fun updateLocation(userId: Long, location: CityInfo?): Optional<Location> {
+    private suspend fun updateLocation(userId: Long, location: CityInfo?): Location? {
         val user = DatabaseManager.userService.read(userId)!!
         val oldLocation = if (user.locationId != null) {
             DatabaseManager.locationService.read(user.locationId)
@@ -156,7 +153,7 @@ class CommandHandler(
             )
             DatabaseManager.userService.update(userId, user.copy(locationId = newLocationId))
         }
-        return Optional.ofNullable(oldLocation)
+        return oldLocation
     }
 
     internal fun handleRestartCommand(ctx: MessageContext): String {
@@ -172,10 +169,10 @@ class CommandHandler(
             )
             updateLocation(ctx.user().id, null)
         }
-        return if (previousLocation.isEmpty) {
+        return if (previousLocation == null) {
             "No location was set"
         } else {
-            "Location dropped from ${previousLocation.get().city}"
+            "Location dropped from ${previousLocation.city}"
         }
     }
 
@@ -209,9 +206,9 @@ class CommandHandler(
          *
          * @param date the base date
          * @param arg the argument specifying the offset
-         * @return the offset date or [LocalDate.EPOCH] if the argument is invalid
+         * @return the offset date or null if the argument is invalid
          */
-        internal fun offsetDate(date: LocalDate, arg: String): LocalDate {
+        internal fun offsetDate(date: LocalDate, arg: String): LocalDate? {
             if (arg.equals("today", ignoreCase = true)) {
                 return date
             }
@@ -224,7 +221,7 @@ class CommandHandler(
                 return date.plusDays(long)
             }
 
-            return LocalDate.EPOCH
+            return null
         }
     }
 }
