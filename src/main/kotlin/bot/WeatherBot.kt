@@ -17,6 +17,7 @@ import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
 import org.telegram.telegrambots.abilitybots.api.db.MapDBContext
 import org.telegram.telegrambots.abilitybots.api.objects.Ability
 import org.telegram.telegrambots.abilitybots.api.objects.Locality
+import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.abilitybots.api.objects.Privacy
 import org.telegram.telegrambots.abilitybots.api.sender.SilentSender
 import org.telegram.telegrambots.meta.generics.TelegramClient
@@ -86,53 +87,55 @@ class WeatherBot :
             .info("Request weather for the day")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
-            .action { ctx ->
-                val inputArg = ctx.arguments().getOrElse(0) { "today" }
-
-                log.debug { "Going to parse arg=$inputArg" }
-                val dateWithOffset = offsetDate(LocalDate.now(), inputArg)
-                if (dateWithOffset == LocalDate.EPOCH) {
-                    silent.send("Invalid argument '$inputArg'. Please, provide valid offset", ctx.chatId())
-                    return@action
-                }
-
-                log.debug { "Check the weather for $dateWithOffset" }
-                val location = runBlocking {
-                    val tgUser = ctx.user()
-                    DatabaseManager.createOrReadUser(
-                        User(
-                            tgUser.id,
-                            tgUser.firstName,
-                            tgUser.lastName,
-                            tgUser.userName
-                        )
-                    )
-                    readLocation(ctx.user().id)
-                }
-                if (location.isEmpty) {
-                    silent.send("Please, provide your location first using /location <city>, [country]", ctx.chatId())
-                    return@action
-                }
-
-                log.debug { "Location is $location" }
-
-                val weatherResponse = try {
-                    weatherFetcher.fetchWeather(location.get().city, dateWithOffset)
-                } catch (e: IllegalArgumentException) {
-                    Either.Left("Wrong input data: ${e.message}")
-                } catch (e: Exception) {
-                    Either.Left("Unexpected error: ${e.message}")
-                }
-
-                val responseToUser = if (weatherResponse.isLeft()) {
-                    weatherResponse.leftOrNull()!!
-                } else {
-                    geminiClient.generateContent(weatherResponse.getOrNull()!!, dateWithOffset)
-                }
-                log.debug { "Response to user: $responseToUser" }
-                silent.sendMd(responseToUser, ctx.chatId())
-            }
+            .action(::handleWeatherCommand)
             .build()
+    }
+
+    private fun handleWeatherCommand(ctx: MessageContext) {
+        val inputArg = ctx.arguments().getOrElse(0) { "today" }
+
+        log.debug { "Going to parse arg=$inputArg" }
+        val dateWithOffset = offsetDate(LocalDate.now(), inputArg)
+        if (dateWithOffset == LocalDate.EPOCH) {
+            silent.send("Invalid argument '$inputArg'. Please, provide valid offset", ctx.chatId())
+            return
+        }
+
+        log.debug { "Check the weather for $dateWithOffset" }
+        val location = runBlocking {
+            val tgUser = ctx.user()
+            DatabaseManager.createOrReadUser(
+                User(
+                    tgUser.id,
+                    tgUser.firstName,
+                    tgUser.lastName,
+                    tgUser.userName
+                )
+            )
+            readLocation(ctx.user().id)
+        }
+        if (location.isEmpty) {
+            silent.send("Please, provide your location first using /location <city>, [country]", ctx.chatId())
+            return
+        }
+
+        log.debug { "Location is $location" }
+
+        val weatherResponse = try {
+            weatherFetcher.fetchWeather(location.get().city, dateWithOffset)
+        } catch (e: IllegalArgumentException) {
+            Either.Left("Wrong input data: ${e.message}")
+        } catch (e: Exception) {
+            Either.Left("Unexpected error: ${e.message}")
+        }
+
+        val responseToUser = if (weatherResponse.isLeft()) {
+            weatherResponse.leftOrNull()!!
+        } else {
+            geminiClient.generateContent(weatherResponse.getOrNull()!!, dateWithOffset)
+        }
+        log.debug { "Response to user: $responseToUser" }
+        silent.sendMd(responseToUser, ctx.chatId())
     }
 
     /**
@@ -147,44 +150,46 @@ class WeatherBot :
             .info("Set location for the request")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
-            .action { ctx ->
-                val args = extractCityAndCountry(ctx.arguments())
-                if (args == null) {
-                    silent.send("Sorry, this feature requires 1 or 2 additional inputs.", ctx.chatId())
-                    return@action
-                }
-                val city = args.first
-                val country = args.second
-                log.debug { "Received location=$city, $country" }
-                // TODO: check if the location is already in DB
-                val cityInfo = geocodingFetcher.fetchCoordinates(city, country)
-                if (cityInfo == CityInfo.EMPTY) {
-                    silent.send("No results found for the city $city. Try to specify the country", ctx.chatId())
-                    return@action
-                }
-                log.info { "Checked geolocation of $city: $cityInfo" }
-                val previousLocation = runBlocking {
-                    val tgUser = ctx.user()
-                    DatabaseManager.createOrReadUser(
-                        User(
-                            tgUser.id,
-                            tgUser.firstName,
-                            tgUser.lastName,
-                            tgUser.userName
-                        )
-                    )
-                    updateLocation(ctx.user().id, cityInfo)
-                }
-                val helperMessage =
-                    "Location is set to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, please state city and two-letter-length country code separated by comma."
-                if (previousLocation.isEmpty) {
-                    silent.send(helperMessage, ctx.chatId())
-                } else {
-                    silent.send("Location updated from ${previousLocation.get().city} to $city", ctx.chatId())
-                    silent.send(helperMessage, ctx.chatId())
-                }
-            }
+            .action(::handleLocationCommand)
             .build()
+    }
+
+    private fun handleLocationCommand(ctx: MessageContext) {
+        val args = extractCityAndCountry(ctx.arguments())
+        if (args == null) {
+            silent.send("Sorry, this feature requires 1 or 2 additional inputs.", ctx.chatId())
+            return
+        }
+        val city = args.first
+        val country = args.second
+        log.debug { "Received location=$city, $country" }
+        // TODO: check if the location is already in DB
+        val cityInfo = geocodingFetcher.fetchCoordinates(city, country)
+        if (cityInfo == CityInfo.EMPTY) {
+            silent.send("No results found for the city $city. Try to specify the country", ctx.chatId())
+            return
+        }
+        log.info { "Checked geolocation of $city: $cityInfo" }
+        val previousLocation = runBlocking {
+            val tgUser = ctx.user()
+            DatabaseManager.createOrReadUser(
+                User(
+                    tgUser.id,
+                    tgUser.firstName,
+                    tgUser.lastName,
+                    tgUser.userName
+                )
+            )
+            updateLocation(ctx.user().id, cityInfo)
+        }
+        val helperMessage =
+            "Location is set to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, please state city and two-letter-length country code separated by comma."
+        if (previousLocation.isEmpty) {
+            silent.send(helperMessage, ctx.chatId())
+        } else {
+            silent.send("Location updated from ${previousLocation.get().city} to $city", ctx.chatId())
+            silent.send(helperMessage, ctx.chatId())
+        }
     }
 
     private fun extractCityAndCountry(args: Array<String>): Pair<String, String>? {
@@ -246,26 +251,28 @@ class WeatherBot :
             .info("Drops your location")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
-            .action { ctx ->
-                val previousLocation = runBlocking {
-                    val tgUser = ctx.user()
-                    DatabaseManager.createOrReadUser(
-                        User(
-                            tgUser.id,
-                            tgUser.firstName,
-                            tgUser.lastName,
-                            tgUser.userName
-                        )
-                    )
-                    updateLocation(ctx.user().id, null)
-                }
-                if (previousLocation.isEmpty) {
-                    silent.send("No location was set", ctx.chatId())
-                } else {
-                    silent.send("Location dropped from ${previousLocation.get().city}", ctx.chatId())
-                }
-            }
+            .action(::handleRestartCommand)
             .build()
+    }
+
+    private fun handleRestartCommand(ctx: MessageContext) {
+        val previousLocation = runBlocking {
+            val tgUser = ctx.user()
+            DatabaseManager.createOrReadUser(
+                User(
+                    tgUser.id,
+                    tgUser.firstName,
+                    tgUser.lastName,
+                    tgUser.userName
+                )
+            )
+            updateLocation(ctx.user().id, null)
+        }
+        if (previousLocation.isEmpty) {
+            silent.send("No location was set", ctx.chatId())
+        } else {
+            silent.send("Location dropped from ${previousLocation.get().city}", ctx.chatId())
+        }
     }
 
     @Suppress("unused")
@@ -275,27 +282,29 @@ class WeatherBot :
             .info("Shows the list of available commands")
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
-            .action { ctx ->
-                val message = """
-                    |How to use this bot?
-                    |
-                    |1. Set your location using `/location <city>, [country]`
-                    |This command is also used to update location.
-                    |The country is optional and should be a two-letter-length code.
-                    |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
-                    |2. Request weather for the day using `/weather <offset>`
-                    |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
-                    |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.
-                    |Examples: `/weather 0`, `/weather today`, `/weather tomorrow`, `/weather 3`
-                    |
-                    |Optional commands (no arguments needed):
-                    |/restart drops your location
-                    |/help shows this instruction :)
-                    |/commands lists you with supported commands with short descriptions
-                """.trimMargin()
-                silent.sendMd(message, ctx.chatId())
-            }
+            .action(::handleHelpCommand)
             .build()
+    }
+
+    private fun handleHelpCommand(ctx: MessageContext) {
+        val message = """
+            |How to use this bot?
+            |
+            |1. Set your location using `/location <city>, [country]`
+            |This command is also used to update location.
+            |The country is optional and should be a two-letter-length code.
+            |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
+            |2. Request weather for the day using `/weather <offset>`
+            |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
+            |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.
+            |Examples: `/weather 0`, `/weather today`, `/weather tomorrow`, `/weather 3`
+            |
+            |Optional commands (no arguments needed):
+            |/restart drops your location
+            |/help shows this instruction :)
+            |/commands lists you with supported commands with short descriptions
+            """.trimMargin()
+        silent.sendMd(message, ctx.chatId())
     }
 
     @Suppress("unused")
@@ -305,11 +314,13 @@ class WeatherBot :
             .flag(Predicates.alwaysTrue())
             .privacy(Privacy.PUBLIC)
             .locality(Locality.ALL)
-            .action { ctx ->
-                val message = """This bot works only with commands. To check them, use /commands or /help"""
-                silent.sendMd(message, ctx.chatId())
-            }
+            .action(::handleDefault)
             .build()
+    }
+
+    private fun handleDefault(ctx: MessageContext) {
+        val message = """This bot works only with commands. To check them, use /commands or /help"""
+        silent.sendMd(message, ctx.chatId())
     }
 
     companion object {
