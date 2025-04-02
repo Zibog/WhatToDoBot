@@ -19,7 +19,6 @@ import java.io.File
 import kotlin.random.Random
 import kotlin.test.Test
 
-
 class WeatherBotTest : HttpTestBase() {
     // Bot to test
     private var bot: WeatherBot
@@ -102,24 +101,24 @@ class WeatherBotTest : HttpTestBase() {
     fun testWeatherCommand_invalidArgument() {
         val invalidArgUpdate = mockFullUpdate("/weather yesterday")
         bot.consume(invalidArgUpdate)
-        verify(sender, times(1)).sendMd("Invalid argument 'yesterday'. Please, provide valid offset", user.id)
+        verify(sender, times(1)).sendMd("Invalid argument 'yesterday'. Please, provide a valid offset", user.id)
 
         val invalidArgUpdate2 = mockFullUpdate("/weather 666")
         bot.consume(invalidArgUpdate2)
-        verify(sender, times(1)).sendMd("Invalid argument '666'. Please, provide valid offset", user.id)
+        verify(sender, times(1)).sendMd("Invalid argument '666'. Please, provide a valid offset", user.id)
 
         val invalidArgUpdate3 = mockFullUpdate("/weather -1")
         bot.consume(invalidArgUpdate3)
-        verify(sender, times(1)).sendMd("Invalid argument '-1'. Please, provide valid offset", user.id)
+        verify(sender, times(1)).sendMd("Invalid argument '-1'. Please, provide a valid offset", user.id)
 
         val outOfBound = config.upperBound + 1
         val invalidArgUpdate4 = mockFullUpdate("/weather $outOfBound")
         bot.consume(invalidArgUpdate4)
-        verify(sender, times(1)).sendMd("Invalid argument '$outOfBound'. Please, provide valid offset", user.id)
+        verify(sender, times(1)).sendMd("Invalid argument '$outOfBound'. Please, provide a valid offset", user.id)
 
         val multipleArgsUpdate = mockFullUpdate("/weather 9 9 9")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(1)).sendMd("Invalid argument '9'. Please, provide valid offset", user.id)
+        verify(sender, times(1)).sendMd("Invalid argument '9'. Please, provide a valid offset", user.id)
     }
 
     @Test
