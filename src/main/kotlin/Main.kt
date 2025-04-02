@@ -3,15 +3,19 @@ package com.dsidak
 import com.dsidak.bot.WeatherBot
 import io.github.cdimascio.dotenv.dotenv
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication
+import java.time.Instant
 
 val log = KotlinLogging.logger {}
 
-fun main() {
+fun main() = runBlocking {
     val token = dotenv["BOT_API_KEY"]
     val botUsername = dotenv["BOT_USERNAME"]
     log.debug { "$botUsername starts using token=$token" }
+    val start = Instant.now()
     try {
         // Instantiate Telegram Bots API
         TelegramBotsLongPollingApplication().use { botsApplication ->
@@ -21,8 +25,9 @@ fun main() {
             bot.onRegister()
             // Register our bot
             botsApplication.registerBot(token, bot)
-            log.info { "${bot::class.java} successfully started" }
-            Thread.currentThread().join()
+            log.info { "${bot::class.java} successfully started in ${Instant.now().toEpochMilli() - start.toEpochMilli()}ms" }
+            // Keep the coroutine running
+            CompletableDeferred<Unit>().await()
         }
     } catch (e: Exception) {
         log.error { e }

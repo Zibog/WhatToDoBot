@@ -10,7 +10,10 @@ import com.dsidak.geocoding.CityInfo
 import com.dsidak.geocoding.GeocodingFetcher
 import com.dsidak.weather.WeatherFetcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import java.time.LocalDate
 
@@ -21,25 +24,23 @@ class CommandHandler(
 ) {
     private val log = KotlinLogging.logger {}
 
-    internal fun handleWeatherCommand(ctx: MessageContext): String {
+    internal suspend fun handleWeatherCommand(ctx: MessageContext): String = coroutineScope {
         val inputArg = ctx.arguments().getOrElse(0) { "today" }
 
         log.debug { "Going to parse offset arg=$inputArg" }
         val dateWithOffset = offsetDate(LocalDate.now(), inputArg)
-            ?: return "Invalid argument '$inputArg'. Please, provide valid offset"
+        if (!isValidWeatherArg(inputArg) || dateWithOffset == null) {
+            return@coroutineScope "Invalid argument '$inputArg'. Please, provide a valid offset"
+        }
 
         log.debug { "Check the weather for date=$dateWithOffset" }
-        val location = runBlocking {
-            readLocation(ctx.user().id)
-        }
-        if (location == null) {
-            return "Please, provide your location first using /location <city>, [country]"
-        }
+        val location = readLocation(ctx.user().id)
+            ?: return@coroutineScope "Please, provide your location first using /location <city>, [country]"
 
         log.debug { "Location is $location" }
 
         val weatherResponse = try {
-            weatherFetcher.fetchWeather(location.city, dateWithOffset)
+            async { weatherFetcher.fetchWeather(location.city, dateWithOffset) }.await()
         } catch (e: IllegalArgumentException) {
             Either.Left("Wrong input data: ${e.message}")
         } catch (e: Exception) {
@@ -49,9 +50,9 @@ class CommandHandler(
         val responseToUser = if (weatherResponse.isLeft()) {
             weatherResponse.leftOrNull()!!
         } else {
-            geminiClient.generateContent(weatherResponse.getOrNull()!!, dateWithOffset)
+            async { geminiClient.generateContent(weatherResponse.getOrNull()!!, dateWithOffset) }.await()
         }
-        return responseToUser
+        return@coroutineScope responseToUser
     }
 
     /**
@@ -60,51 +61,37 @@ class CommandHandler(
      * @param userId the user ID
      * @return a [Location] containing the location of the user if it exists in DB, otherwise null
      */
-    private suspend fun readLocation(userId: Long): Location? {
-        val user = DatabaseManager.userService.read(userId) ?: return null
-        return if (user.locationId != null) {
+    private suspend fun readLocation(userId: Long): Location? = withContext(Dispatchers.IO) {
+        val user = DatabaseManager.userService.read(userId) ?: return@withContext null
+        return@withContext if (user.locationId != null) {
             DatabaseManager.locationService.read(user.locationId)
         } else {
             null
         }
     }
 
-    internal fun handleLocationCommand(ctx: MessageContext): String {
+    internal suspend fun handleLocationCommand(ctx: MessageContext): String = coroutineScope {
         val args = extractCityAndCountry(ctx.arguments())
-            ?: return "Sorry, this feature requires 1 or 2 additional inputs."
+        if (args == null || !isValidLocationArgs(args)) {
+            return@coroutineScope "Sorry, this feature requires 1 or 2 additional inputs"
+        }
         val city = args.first
         val country = args.second
         log.debug { "Received location=$city, $country" }
         // TODO: check if the location is already in DB
-        val cityInfo = geocodingFetcher.fetchCoordinates(city, country)
+        val cityInfo = async { geocodingFetcher.fetchCoordinates(city, country) }.await()
         if (cityInfo == CityInfo.EMPTY) {
-            return "No results found for the city $city. Try to specify the country"
+            return@coroutineScope "No results found for the city $city. Try to specify the country"
         }
         log.info { "Checked geolocation of $city: $cityInfo" }
-        val previousLocation = runBlocking {
-            DatabaseManager.createOrReadUser(ctx.user().toUser())
-            updateLocation(ctx.user().id, cityInfo)
-        }
+        async { DatabaseManager.createOrReadUser(ctx.user().toUser()) }.await()
+        val previousLocation = async { updateLocation(ctx.user().id, cityInfo) }.await()
         val action = if (previousLocation == null) {
             "set"
         } else {
             "updated from ${previousLocation.city}, ${previousLocation.country}"
         }
-        return "Location $action to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, set it using /location <city>, <country>."
-    }
-
-    /**
-     * Extracts the city and country from the arguments.
-     *
-     * @param args the arguments array
-     * @return [Pair] containing the city and country, or null if the arguments are invalid
-     */
-    private fun extractCityAndCountry(args: Array<String>): Pair<String, String>? {
-        return when (args.size) {
-            1 -> Pair(args[0].removeSuffix(","), "")
-            2 -> Pair(args[0].removeSuffix(","), args[1])
-            else -> null
-        }
+        return@coroutineScope "Location $action to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, set it using `/location <city>, <country>`"
     }
 
     /**
@@ -114,7 +101,7 @@ class CommandHandler(
      * @param location the new location
      * @return a [Location] containing the previous location if it existed in DB, otherwise null
      */
-    private suspend fun updateLocation(userId: Long, location: CityInfo?): Location? {
+    private suspend fun updateLocation(userId: Long, location: CityInfo?): Location? = withContext(Dispatchers.IO) {
         val user = DatabaseManager.userService.read(userId)!!
         val oldLocation = if (user.locationId != null) {
             DatabaseManager.locationService.read(user.locationId)
@@ -133,15 +120,15 @@ class CommandHandler(
             )
             DatabaseManager.userService.update(userId, user.copy(locationId = newLocationId))
         }
-        return oldLocation
+        return@withContext oldLocation
     }
 
-    internal fun handleRestartCommand(ctx: MessageContext): String {
-        val previousLocation = runBlocking {
+    internal suspend fun handleRestartCommand(ctx: MessageContext): String = coroutineScope {
+        val previousLocation = async {
             DatabaseManager.createOrReadUser(ctx.user().toUser())
             updateLocation(ctx.user().id, null)
-        }
-        return if (previousLocation == null) {
+        }.await()
+        return@coroutineScope if (previousLocation == null) {
             "No location was set"
         } else {
             "Location dropped from ${previousLocation.city}"
@@ -156,7 +143,7 @@ class CommandHandler(
             |This command is also used to update location.
             |The country is optional and should be a two-letter-length code.
             |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
-            |2. Request weather for the day using `/weather <offset>`
+            |2. Request weather for the day using `/weather [offset]`
             |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
             |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.
             |Examples: `/weather 0`, `/weather today`, `/weather tomorrow`, `/weather 3`
@@ -194,6 +181,31 @@ class CommandHandler(
             }
 
             return null
+        }
+
+        /**
+         * Extracts the city and country from the arguments.
+         *
+         * @param args the arguments array
+         * @return [Pair] containing the city and country, or null if the arguments are invalid
+         */
+        private fun extractCityAndCountry(args: Array<String>): Pair<String, String>? {
+            return when (args.size) {
+                1 -> Pair(args[0].removeSuffix(","), "")
+                2 -> Pair(args[0].removeSuffix(","), args[1])
+                else -> null
+            }
+        }
+
+        private fun isValidWeatherArg(arg: String): Boolean {
+            return arg.equals("today", ignoreCase = true) || arg.equals(
+                "tomorrow",
+                ignoreCase = true
+            ) || arg.toLongOrNull() != null
+        }
+
+        private fun isValidLocationArgs(args: Pair<String, String>): Boolean {
+            return args.first.isNotBlank() && (args.second.isBlank() || args.second.length == 2)
         }
 
         private fun org.telegram.telegrambots.meta.api.objects.User.toUser(): User {

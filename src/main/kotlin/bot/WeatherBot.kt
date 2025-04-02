@@ -3,6 +3,7 @@ package com.dsidak.bot
 import com.dsidak.dotenv
 import com.google.common.base.Predicates
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
 import org.telegram.telegrambots.abilitybots.api.db.MapDBContext
 import org.telegram.telegrambots.abilitybots.api.objects.Ability
@@ -57,9 +58,11 @@ class WeatherBot(
             .locality(Locality.ALL)
             .enableStats()
             .action { ctx ->
-                val responseToUser = commandHandler.handleWeatherCommand(ctx)
-                log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
-                silent.sendMd(responseToUser, ctx.chatId())
+                runBlocking {
+                    val responseToUser = commandHandler.handleWeatherCommand(ctx)
+                    log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
+                    silent.sendMd(responseToUser, ctx.chatId())
+                }
             }
             .build()
     }
@@ -78,9 +81,11 @@ class WeatherBot(
             .locality(Locality.ALL)
             .enableStats()
             .action { ctx ->
-                val responseToUser = commandHandler.handleLocationCommand(ctx)
-                log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
-                silent.sendMd(responseToUser, ctx.chatId())
+                runBlocking {
+                    val responseToUser = commandHandler.handleLocationCommand(ctx)
+                    log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
+                    silent.sendMd(responseToUser, ctx.chatId())
+                }
             }
             .build()
     }
@@ -99,9 +104,11 @@ class WeatherBot(
             .locality(Locality.ALL)
             .enableStats()
             .action { ctx ->
-                val responseToUser = commandHandler.handleRestartCommand(ctx)
-                log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
-                silent.sendMd(responseToUser, ctx.chatId())
+                runBlocking {
+                    val responseToUser = commandHandler.handleRestartCommand(ctx)
+                    log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
+                    silent.sendMd(responseToUser, ctx.chatId())
+                }
             }
             .build()
     }
