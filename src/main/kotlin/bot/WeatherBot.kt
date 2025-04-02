@@ -60,8 +60,8 @@ class WeatherBot(
             .action { ctx ->
                 runBlocking {
                     val responseToUser = commandHandler.handleWeatherCommand(ctx)
-                    log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
-                    silent.sendMd(responseToUser, ctx.chatId())
+                    log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser, status=${responseToUser.status}" }
+                    silent.sendMd(responseToUser.toString(), ctx.chatId())
                 }
             }
             .build()
@@ -83,8 +83,8 @@ class WeatherBot(
             .action { ctx ->
                 runBlocking {
                     val responseToUser = commandHandler.handleLocationCommand(ctx)
-                    log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
-                    silent.sendMd(responseToUser, ctx.chatId())
+                    log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser, status=${responseToUser.status}" }
+                    silent.sendMd(responseToUser.toString(), ctx.chatId())
                 }
             }
             .build()
@@ -106,8 +106,8 @@ class WeatherBot(
             .action { ctx ->
                 runBlocking {
                     val responseToUser = commandHandler.handleRestartCommand(ctx)
-                    log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
-                    silent.sendMd(responseToUser, ctx.chatId())
+                    log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser, status=${responseToUser.status}" }
+                    silent.sendMd(responseToUser.toString(), ctx.chatId())
                 }
             }
             .build()
@@ -128,8 +128,8 @@ class WeatherBot(
             .enableStats()
             .action { ctx ->
                 val responseToUser = commandHandler.handleHelpCommand()
-                log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
-                silent.sendMd(responseToUser, ctx.chatId())
+                log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser, status=${responseToUser.status}" }
+                silent.sendMd(responseToUser.toString(), ctx.chatId())
             }
             .build()
     }
@@ -149,8 +149,8 @@ class WeatherBot(
             .enableStats()
             .action { ctx ->
                 val responseToUser = commandHandler.handleDefault()
-                log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser" }
-                silent.sendMd(responseToUser, ctx.chatId())
+                log.debug { "user=${ctx.user().userName}, chatId=${ctx.chatId()}, response=$responseToUser, status=${responseToUser.status}" }
+                silent.sendMd(responseToUser.toString(), ctx.chatId())
             }
             .build()
     }
