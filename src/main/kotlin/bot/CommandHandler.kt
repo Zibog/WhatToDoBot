@@ -9,6 +9,7 @@ import com.dsidak.db.schemas.User
 import com.dsidak.geocoding.CityInfo
 import com.dsidak.geocoding.GeocodingFetcher
 import com.dsidak.weather.WeatherFetcher
+import com.dsidak.weather.WeatherResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -24,18 +25,18 @@ class CommandHandler(
 ) {
     private val log = KotlinLogging.logger {}
 
-    internal suspend fun handleWeatherCommand(ctx: MessageContext): String = coroutineScope {
+    internal suspend fun handleWeatherCommand(ctx: MessageContext): BotResponse = coroutineScope {
         val inputArg = ctx.arguments().getOrElse(0) { "today" }
 
         log.debug { "Going to parse offset arg=$inputArg" }
         val dateWithOffset = offsetDate(LocalDate.now(), inputArg)
         if (!isValidWeatherArg(inputArg) || dateWithOffset == null) {
-            return@coroutineScope "Invalid argument '$inputArg'. Please, provide a valid offset"
+            return@coroutineScope BotResponse.Error("Invalid argument '$inputArg'. Please, provide a valid offset")
         }
 
         log.debug { "Check the weather for date=$dateWithOffset" }
         val location = readLocation(ctx.user().id)
-            ?: return@coroutineScope "Please, provide your location first using /location <city>, [country]"
+            ?: return@coroutineScope BotResponse.Error("Please, provide your location first using /location <city>, [country]")
 
         log.debug { "Location is $location" }
 
@@ -52,7 +53,13 @@ class CommandHandler(
         } else {
             async { geminiClient.generateContent(weatherResponse.getOrNull()!!, dateWithOffset) }.await()
         }
-        return@coroutineScope responseToUser
+        return@coroutineScope BotResponse.FullResponse(
+            forecastResponseString(
+                dateWithOffset,
+                location,
+                weatherResponse.getOrNull()!!
+            ), responseToUser
+        )
     }
 
     /**
@@ -70,15 +77,15 @@ class CommandHandler(
         }
     }
 
-    internal suspend fun handleLocationCommand(ctx: MessageContext): String = coroutineScope {
+    internal suspend fun handleLocationCommand(ctx: MessageContext): BotResponse = coroutineScope {
         async { DatabaseManager.createOrReadUser(ctx.user().toUser()) }.await()
         if (ctx.arguments().isEmpty()) {
-            val location = readLocation(ctx.user().id) ?: return@coroutineScope "No location was set"
-            return@coroutineScope "Your current location is ${location.city}, ${location.country}"
+            val location = readLocation(ctx.user().id) ?: return@coroutineScope BotResponse.Error("No location was set")
+            return@coroutineScope BotResponse.Error("Your current location is ${location.city}, ${location.country}")
         }
         val args = extractCityAndCountry(ctx.arguments())
         if (args == null || !isValidLocationArgs(args)) {
-            return@coroutineScope "Sorry, this feature requires 1 or 2 additional inputs"
+            return@coroutineScope BotResponse.Error("Sorry, this feature requires 1 or 2 additional inputs")
         }
         val city = args.first
         val country = args.second
@@ -86,7 +93,7 @@ class CommandHandler(
         // TODO: check if the location is already in DB
         val cityInfo = async { geocodingFetcher.fetchCoordinates(city, country) }.await()
         if (cityInfo == CityInfo.EMPTY) {
-            return@coroutineScope "No results found for the city $city. Try to specify the country"
+            return@coroutineScope BotResponse.Error("No results found for the city $city. Try to specify the country")
         }
         log.info { "Checked geolocation of $city: $cityInfo" }
         val previousLocation = async { updateLocation(ctx.user().id, cityInfo) }.await()
@@ -95,7 +102,7 @@ class CommandHandler(
         } else {
             "updated from ${previousLocation.city}, ${previousLocation.country}"
         }
-        return@coroutineScope "Location $action to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, set it using `/location <city>, <country>`"
+        return@coroutineScope BotResponse.Success("Location $action to ${cityInfo.name}, ${cityInfo.country}. If location is wrong, set it using `/location <city>, <country>`")
     }
 
     /**
@@ -127,20 +134,21 @@ class CommandHandler(
         return@withContext oldLocation
     }
 
-    internal suspend fun handleRestartCommand(ctx: MessageContext): String = coroutineScope {
+    internal suspend fun handleRestartCommand(ctx: MessageContext): BotResponse = coroutineScope {
         val previousLocation = async {
             DatabaseManager.createOrReadUser(ctx.user().toUser())
             updateLocation(ctx.user().id, null)
         }.await()
         return@coroutineScope if (previousLocation == null) {
-            "No location was set"
+            BotResponse.Success("No location was set")
         } else {
-            "Location dropped from ${previousLocation.city}"
+            BotResponse.Success("Location dropped from ${previousLocation.city}")
         }
     }
 
-    internal fun handleHelpCommand(): String {
-        return """
+    internal fun handleHelpCommand(): BotResponse {
+        return BotResponse.Success(
+            """
             |How to use this bot?
             |
             |1. Set your location using `/location <city>, [country]`
@@ -159,10 +167,11 @@ class CommandHandler(
             |/help shows this instruction :)
             |/commands lists you with supported commands with short descriptions
             """.trimMargin()
+        )
     }
 
-    internal fun handleDefault(): String {
-        return """This bot works only with commands. To check them, use /commands or /help"""
+    internal fun handleDefault(): BotResponse {
+        return BotResponse.Success("""This bot works only with commands. To check them, use /commands or /help""")
     }
 
     companion object {
@@ -187,6 +196,22 @@ class CommandHandler(
             }
 
             return null
+        }
+
+        private fun LocalDate.toReadableString(): String {
+            return when (val offset = this.toEpochDay() - LocalDate.now().toEpochDay()) {
+                0L -> "Today"
+                1L -> "Tomorrow"
+                else -> "In $offset days from today"
+            }
+        }
+
+        private fun forecastResponseString(date: LocalDate, location: Location, weather: WeatherResponse): String {
+            val response = "${date.toReadableString()} in ${location.city}, ${location.country} " +
+                    "the weather is ${weather.weather[0].description}. The temperature is ${weather.main.temperature}°C, " +
+                    "feels like ${weather.main.feelsLike}°C, humidity is ${weather.main.humidity}%, " +
+                    "wind speed is ${weather.wind.speed} m/s."
+            return response
         }
 
         /**

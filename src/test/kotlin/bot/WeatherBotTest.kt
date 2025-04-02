@@ -78,7 +78,10 @@ class WeatherBotTest : HttpTestBase() {
         mockResponse(file.readText(), httpClient = geminiHttpClient)
         // Try to ask again with city set
         bot.consume(update)
-        verify(sender, times(1)).sendMd(argThat { startsWith("I recommend you to") }, eq(user.id))
+        verify(sender, times(1)).sendMd(
+            argThat { contains("the weather is") and contains("I recommend you to") },
+            eq(user.id)
+        )
     }
 
     @Test
@@ -94,7 +97,10 @@ class WeatherBotTest : HttpTestBase() {
         mockResponse(file.readText(), httpClient = geminiHttpClient)
         val update = mockFullUpdate("/weather")
         bot.consume(update)
-        verify(sender, times(1)).sendMd(argThat { startsWith("I recommend you to") }, eq(user.id))
+        verify(sender, times(1)).sendMd(
+            argThat { contains("the weather is") and contains("I recommend you to") },
+            eq(user.id)
+        )
     }
 
     @Test
