@@ -173,17 +173,24 @@ class WeatherBotTest : HttpTestBase() {
             "Location set to Sofia, BG. If location is wrong, set it using `/location <city>, <country>`",
             user.id
         )
+
+        val zeroArgUpdate = mockFullUpdate("/location")
+        bot.consume(zeroArgUpdate)
+        verify(sender, times(1)).sendMd("Your current location is Sofia, BG", user.id)
+    }
+
+    @Test
+    fun testLocationCommand_noLocationSet() {
+        val zeroArgUpdate = mockFullUpdate("/location")
+        bot.consume(zeroArgUpdate)
+        verify(sender, times(1)).sendMd("No location was set", user.id)
     }
 
     @Test
     fun testLocationCommand_wrongArgumentsNumber() {
-        val zeroArgUpdate = mockFullUpdate("/location")
-        bot.consume(zeroArgUpdate)
-        verify(sender, times(1)).sendMd("Sorry, this feature requires 1 or 2 additional inputs", user.id)
-
         val multipleArgsUpdate = mockFullUpdate("/location Tut Tam Sam")
         bot.consume(multipleArgsUpdate)
-        verify(sender, times(2)).sendMd("Sorry, this feature requires 1 or 2 additional inputs", user.id)
+        verify(sender, times(1)).sendMd("Sorry, this feature requires 1 or 2 additional inputs", user.id)
     }
 
     @Test
@@ -228,6 +235,8 @@ class WeatherBotTest : HttpTestBase() {
             |This command is also used to update location.
             |The country is optional and should be a two-letter-length code.
             |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
+            |You can use this command without arguments to check your current location.
+            |Example: `/location`
             |2. Request weather for the day using `/weather [offset]`
             |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
             |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.

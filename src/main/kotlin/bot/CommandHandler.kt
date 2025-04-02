@@ -71,6 +71,11 @@ class CommandHandler(
     }
 
     internal suspend fun handleLocationCommand(ctx: MessageContext): String = coroutineScope {
+        async { DatabaseManager.createOrReadUser(ctx.user().toUser()) }.await()
+        if (ctx.arguments().isEmpty()) {
+            val location = readLocation(ctx.user().id) ?: return@coroutineScope "No location was set"
+            return@coroutineScope "Your current location is ${location.city}, ${location.country}"
+        }
         val args = extractCityAndCountry(ctx.arguments())
         if (args == null || !isValidLocationArgs(args)) {
             return@coroutineScope "Sorry, this feature requires 1 or 2 additional inputs"
@@ -84,7 +89,6 @@ class CommandHandler(
             return@coroutineScope "No results found for the city $city. Try to specify the country"
         }
         log.info { "Checked geolocation of $city: $cityInfo" }
-        async { DatabaseManager.createOrReadUser(ctx.user().toUser()) }.await()
         val previousLocation = async { updateLocation(ctx.user().id, cityInfo) }.await()
         val action = if (previousLocation == null) {
             "set"
@@ -143,6 +147,8 @@ class CommandHandler(
             |This command is also used to update location.
             |The country is optional and should be a two-letter-length code.
             |Examples: `/location Sofia`, `/location Moscow`, `/location London, GB`
+            |You can use this command without arguments to check your current location.
+            |Example: `/location`
             |2. Request weather for the day using `/weather [offset]`
             |The offset can be a number from 0 to 5, *today* or *tomorrow*, where *today* is the default value.
             |The offset is the number of days from today, where 0 is today, 1 is tomorrow, etc.
