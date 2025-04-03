@@ -90,8 +90,17 @@ class CommandHandler(
         val city = args.first
         val country = args.second
         log.debug { "Received location=$city, $country" }
-        // TODO: check if the location is already in DB
-        val cityInfo = async { geocodingFetcher.fetchCoordinates(city, country) }.await()
+        val location = DatabaseManager.locationService.readByCity(city)
+        val cityInfo = if (location == null) {
+            async { geocodingFetcher.fetchCoordinates(city, country) }.await()
+        } else {
+            CityInfo(
+                location.city,
+                latitude = location.latitude,
+                longitude = location.longitude,
+                country = location.country
+            )
+        }
         if (cityInfo == CityInfo.EMPTY) {
             return@coroutineScope BotResponse.Error("No results found for the city $city. Try to specify the country")
         }
