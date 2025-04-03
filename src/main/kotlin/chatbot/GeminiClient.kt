@@ -1,8 +1,8 @@
 package com.dsidak.chatbot
 
-import arrow.core.Either
 import com.dsidak.configuration.config
 import com.dsidak.dotenv
+import com.dsidak.exception.RequestFailureException
 import com.dsidak.http.RequestExecutor
 import com.dsidak.weather.WeatherResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -32,6 +32,7 @@ class GeminiClient(
      * @param date the date for which to generate content
      * @return the generated content as a string
      */
+    @Throws(RequestFailureException::class)
     fun generateContent(weather: WeatherResponse, date: LocalDate): String {
         val content = """
             |Weather in ${weather.cityName}, ${weather.country}:
@@ -53,32 +54,29 @@ class GeminiClient(
         )
         val jsonRequest = json.encodeToString(requestContent)
 
-        val responseEither = executeRequest(
-            Request.Builder()
-                .url(toUrl(config.gemini.modelUrl, config.gemini.modelName, config.gemini.modelAction))
-                .post(jsonRequest.toRequestBody("application/json".toMediaType()))
-                .build()
-        )
+        val response = try {
+            executeRequest(
+                Request.Builder()
+                    .url(toUrl(config.gemini.modelUrl, config.gemini.modelName, config.gemini.modelAction))
+                    .post(jsonRequest.toRequestBody("application/json".toMediaType()))
+                    .build()
+            )
+        } catch (e: RequestFailureException) {
+            throw RequestFailureException("Failed to generate content, try again later")
+        }
 
-        return responseEither.fold(
-            { errorDescription: String ->
-                log.error { errorDescription }
-                "Failed to generate content, try again later"
-            },
-            { response: GeminiFlashResponse ->
-                response.candidates[0].content.parts[0].text
-            }
-        )
+        return response.candidates[0].content.parts[0].text
     }
 
-    override fun parseResponse(body: String): Either<String, GeminiFlashResponse> {
+    @Throws(RequestFailureException::class)
+    override fun parseResponse(body: String): GeminiFlashResponse {
         return try {
             log.info { "Parsing Gemini response" }
-            Either.Right(json.decodeFromString<GeminiFlashResponse>(body))
+            json.decodeFromString<GeminiFlashResponse>(body)
         } catch (e: Exception) {
             val message = "Failed to parse Gemini response: ${e.message}"
             log.error { message }
-            Either.Left(message)
+            throw RequestFailureException(message, e)
         }
     }
 

@@ -1,6 +1,6 @@
 package com.dsidak.http
 
-import arrow.core.Either
+import com.dsidak.exception.RequestFailureException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.io.IOException
 import okhttp3.OkHttpClient
@@ -20,17 +20,18 @@ abstract class RequestExecutor<T>(private val httpClient: OkHttpClient) {
      * Parses the response body to an object of type [T].
      *
      * @param body the response body as a string
-     * @return either an error description or the parsed response object
+     * @return parsed response object
      */
-    protected abstract fun parseResponse(body: String): Either<String, T>
+    protected abstract fun parseResponse(body: String): T
 
     /**
      * Executes the given HTTP request.
      *
      * @param request the HTTP request to execute
-     * @return either an error description or the response object
+     * @return response object of type [T]
      */
-    fun executeRequest(request: Request): Either<String, T> {
+    @Throws(RequestFailureException::class)
+    fun executeRequest(request: Request): T {
         runCatching {
             httpClient.newCall(request).execute().use { response ->
                 log.debug { "Received response: $response" }
@@ -40,20 +41,21 @@ abstract class RequestExecutor<T>(private val httpClient: OkHttpClient) {
                     }
                 } else {
                     log.warn { "Request $request failed: ${response.code} ${response.message}" }
-                    return Either.Left("Request failed: ${response.code} ${response.message}")
+                    throw RequestFailureException("Request failed: ${response.code} ${response.message}")
                 }
             }
         }.onFailure {
             val errorMessage = "Failed to execute request due to: ${it.message ?: "unknown error"}"
-            log.error { it.printStackTrace() }
-            return when (it) {
-                is UnknownHostException -> Either.Left("$errorMessage: can't connect to remote service")
-                is IOException -> Either.Left("$errorMessage: network error")
-                else -> Either.Left(errorMessage)
+            log.error(it) { it.printStackTrace() }
+            throw when (it) {
+                is UnknownHostException -> RequestFailureException("$errorMessage: can't connect to remote service", it)
+                is IOException -> RequestFailureException("$errorMessage: network error", it)
+                is RequestFailureException -> it
+                else -> RequestFailureException(errorMessage, it)
             }
         }
 
         // Everything should be handled earlier
-        return Either.Left("Failed to execute request, try again later")
+        throw RequestFailureException("Failed to execute request, try again later")
     }
 }

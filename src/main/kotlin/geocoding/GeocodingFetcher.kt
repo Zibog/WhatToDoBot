@@ -1,8 +1,8 @@
 package com.dsidak.geocoding
 
-import arrow.core.Either
 import com.dsidak.configuration.config
 import com.dsidak.dotenv
+import com.dsidak.exception.RequestFailureException
 import com.dsidak.http.RequestExecutor
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
@@ -28,7 +28,7 @@ class GeocodingFetcher(httpClient: OkHttpClient = OkHttpClient().newBuilder().bu
      * @param country the name of the country, optional
      * @return the [CityInfo] containing the coordinates
      */
-    fun fetchCoordinates(city: String, country: String): CityInfo {
+    fun fetchCoordinates(city: String, country: String): List<CityInfo> {
         val url = toUrl(city, country)
 
         val request = Request.Builder()
@@ -37,33 +37,24 @@ class GeocodingFetcher(httpClient: OkHttpClient = OkHttpClient().newBuilder().bu
             .get()
             .build()
 
-        val response = executeRequest(request).fold(
-            { errorDescription: String ->
-                // TODO: no real reason to just log this message
-                log.error { errorDescription }
-                return CityInfo.EMPTY
-            },
-            { response: List<CityInfo> -> return@fold response }
-        )
+        val response = try {
+            executeRequest(request)
+        } catch (e: RequestFailureException) {
+            return emptyList()
+        }
 
-        // TODO: suggest to user to choose city if there are multiple results
-        return response[0]
+        return response
     }
 
-    override fun parseResponse(body: String): Either<String, List<CityInfo>> {
+    @Throws(RequestFailureException::class)
+    override fun parseResponse(body: String): List<CityInfo> {
         return try {
             log.info { "Parsing geocoding response: $body" }
-            val cityInfos = json.decodeFromString<List<CityInfo>>(body)
-            if (cityInfos.isEmpty()) {
-                val message = "No results found for the given city"
-                log.info { message }
-                return Either.Left(message)
-            }
-            Either.Right(cityInfos)
+            json.decodeFromString<List<CityInfo>>(body)
         } catch (e: Exception) {
             val message = "Failed to parse geocoding response: ${e.message}"
             log.error { message }
-            return Either.Left(message)
+            throw RequestFailureException(message, e)
         }
     }
 

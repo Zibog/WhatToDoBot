@@ -10,8 +10,6 @@ import java.io.File
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class GeminiClientTest : HttpTestBase() {
     private val geminiClient = GeminiClient(httpClient)
@@ -21,11 +19,7 @@ class GeminiClientTest : HttpTestBase() {
         val file = File("$resources/chatbot/GeminiResponse_current.json")
         mockResponse(file.readText())
 
-        val geminiResponse = geminiClient.executeRequest(DEFAULT_REQUEST)
-
-        assertTrue(geminiResponse.isRight())
-        val response = geminiResponse.getOrNull()
-        assertNotNull(response)
+        val response = geminiClient.executeRequest(DEFAULT_REQUEST)
         assertEquals(1, response.candidates.size)
         assertEquals(FinishReason.STOP, response.candidates[0].finishReason)
     }

@@ -1,15 +1,16 @@
 package com.dsidak.weather
 
-import arrow.core.Either
 import com.dsidak.configuration.config
 import com.dsidak.db.DatabaseManager
 import com.dsidak.db.schemas.Location
 import com.dsidak.dotenv
+import com.dsidak.exception.RequestFailureException
 import com.dsidak.http.RequestExecutor
 import com.dsidak.log
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
@@ -35,9 +36,10 @@ class WeatherFetcher(
      *
      * @param city the name of the city
      * @param date the date for which to fetch the weather
-     * @return either an error description or [WeatherResponse] containing the weather data
+     * @return [WeatherResponse] containing the weather data
      */
-    fun fetchWeather(city: String, date: LocalDate): Either<String, WeatherResponse> {
+    @Throws(RequestFailureException::class)
+    suspend fun fetchWeather(city: String, date: LocalDate): WeatherResponse {
         val location = runBlocking {
             DatabaseManager.locationService.readByCity(city)
         }
@@ -55,30 +57,26 @@ class WeatherFetcher(
             .get()
             .build()
 
-        val response = executeRequest(request).fold(
-            { errorDescription: String -> return Either.Left(errorDescription) },
-            { response: WeatherResponse -> return@fold response }
-        )
+        val response = executeRequest(request)
 
         if (location == null) {
-            runBlocking {
-                launch {
-                    DatabaseManager.locationService.create(
-                        Location(
-                            city = response.cityName,
-                            country = response.country,
-                            latitude = response.coordinates.latitude,
-                            longitude = response.coordinates.longitude
-                        )
+            withContext(Dispatchers.IO) {
+                DatabaseManager.locationService.create(
+                    Location(
+                        city = response.cityName,
+                        country = response.country,
+                        latitude = response.coordinates.latitude,
+                        longitude = response.coordinates.longitude
                     )
-                }.join()
+                )
             }
         }
 
-        return Either.Right(response)
+        return response
     }
 
-    override fun parseResponse(body: String): Either<String, WeatherResponse> {
+    @Throws(RequestFailureException::class)
+    override fun parseResponse(body: String): WeatherResponse {
         return try {
             val jsonObject = json.parseToJsonElement(body).jsonObject
 
@@ -91,11 +89,11 @@ class WeatherFetcher(
                 json.decodeFromJsonElement<CurrentWeatherResponse>(jsonObject)
             }
 
-            Either.Right(weatherResponse)
+            weatherResponse
         } catch (e: Exception) {
             val message = "Failed to parse weather response: ${e.message}"
             log.error { message }
-            Either.Left(message)
+            throw RequestFailureException(message, e)
         }
     }
 

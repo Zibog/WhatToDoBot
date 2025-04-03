@@ -1,13 +1,13 @@
 package weather
 
 import base.HttpTestBase
+import com.dsidak.exception.RequestFailureException
 import com.dsidak.weather.WeatherFetcher
 import org.mockito.kotlin.whenever
 import java.io.File
 import java.net.UnknownHostException
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 class WeatherFetcherTest : HttpTestBase() {
     private val weatherFetcher = WeatherFetcher(httpClient)
@@ -18,22 +18,19 @@ class WeatherFetcherTest : HttpTestBase() {
         mockResponse(file.readText())
 
         val response = weatherFetcher.executeRequest(DEFAULT_REQUEST)
-
-        assert(response.isRight())
-        val weatherResponse = response.getOrNull()
-        assertNotNull(weatherResponse)
-        assertEquals("Sofia", weatherResponse.cityName)
-        assertEquals("BG", weatherResponse.country)
+        assertEquals("Sofia", response.cityName)
+        assertEquals("BG", response.country)
     }
 
     @Test
     fun testExecuteRequest_currentWeather_wrongCity() {
         mockResponse(code = 404, message = "Not Found")
 
-        val response = weatherFetcher.executeRequest(DEFAULT_REQUEST)
-
-        assert(response.isLeft())
-        assertEquals("Request failed: 404 Not Found", response.leftOrNull())
+        try {
+            weatherFetcher.executeRequest(DEFAULT_REQUEST)
+        } catch (e: RequestFailureException) {
+            assertEquals("Request failed: 404 Not Found", e.message)
+        }
     }
 
     @Test
@@ -43,13 +40,11 @@ class WeatherFetcherTest : HttpTestBase() {
         whenever(httpClient.newCall(DEFAULT_REQUEST).execute()).thenThrow(UnknownHostException())
         val offlineWeatherFetcher = WeatherFetcher(httpClient)
 
-        val response = offlineWeatherFetcher.executeRequest(DEFAULT_REQUEST)
-
-        assert(response.isLeft())
-        assertEquals(
-            "Failed to execute request due to: unknown error: can't connect to remote service",
-            response.leftOrNull()
-        )
+        try {
+            offlineWeatherFetcher.executeRequest(DEFAULT_REQUEST)
+        } catch (e: RequestFailureException) {
+            assertEquals("Failed to execute request due to: unknown error: can't connect to remote service", e.message)
+        }
     }
 
     @Test
@@ -58,11 +53,7 @@ class WeatherFetcherTest : HttpTestBase() {
         mockResponse(file.readText())
 
         val response = weatherFetcher.executeRequest(DEFAULT_REQUEST)
-
-        assert(response.isRight())
-        val weatherResponse = response.getOrNull()
-        assertNotNull(weatherResponse)
-        assertEquals("Munich", weatherResponse.cityName)
-        assertEquals("DE", weatherResponse.country)
+        assertEquals("Munich", response.cityName)
+        assertEquals("DE", response.country)
     }
 }
