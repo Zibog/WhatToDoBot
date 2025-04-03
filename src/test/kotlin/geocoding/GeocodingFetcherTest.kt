@@ -7,7 +7,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class GeocodingFetcherTest : HttpTestBase() {
     private val geocodingFetcher = GeocodingFetcher(httpClient)
@@ -18,11 +18,7 @@ class GeocodingFetcherTest : HttpTestBase() {
         mockResponse(file.readText())
 
         val response = geocodingFetcher.executeRequest(DEFAULT_REQUEST)
-
-        assert(response.isRight())
-        val geoResponse = response.getOrNull()
-        assertNotNull(geoResponse)
-        val firstCity = geoResponse[0]
+        val firstCity = response[0]
         assertEquals("Sofia", firstCity.name)
         assertEquals(42.6977028, firstCity.latitude)
         assertEquals(23.3217359, firstCity.longitude)
@@ -35,11 +31,7 @@ class GeocodingFetcherTest : HttpTestBase() {
         mockResponse(file.readText())
 
         val response = geocodingFetcher.executeRequest(DEFAULT_REQUEST)
-
-        assert(response.isRight())
-        val geoResponse = response.getOrNull()
-        assertNotNull(geoResponse)
-        val firstCity = geoResponse[0]
+        val firstCity = response[0]
         assertEquals("Sofia", firstCity.name)
         assertEquals(42.6977028, firstCity.latitude)
         assertEquals(23.3217359, firstCity.longitude)
@@ -58,8 +50,6 @@ class GeocodingFetcherTest : HttpTestBase() {
         mockResponse()
 
         val response = geocodingFetcher.executeRequest(request)
-
-        assert(response.isLeft())
-        assertEquals("No results found for the given city", response.leftOrNull())
+        assertTrue(response.isEmpty())
     }
 }

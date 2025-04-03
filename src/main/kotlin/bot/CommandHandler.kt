@@ -1,11 +1,11 @@
 package com.dsidak.bot
 
-import arrow.core.Either
 import com.dsidak.chatbot.GeminiClient
 import com.dsidak.configuration.config
 import com.dsidak.db.DatabaseManager
 import com.dsidak.db.schemas.Location
 import com.dsidak.db.schemas.User
+import com.dsidak.exception.RequestFailureException
 import com.dsidak.geocoding.CityInfo
 import com.dsidak.geocoding.GeocodingFetcher
 import com.dsidak.weather.WeatherFetcher
@@ -41,25 +41,22 @@ class CommandHandler(
         log.debug { "Location is $location" }
 
         val weatherResponse = try {
-            async { weatherFetcher.fetchWeather(location.city, dateWithOffset) }.await()
-        } catch (e: IllegalArgumentException) {
-            Either.Left("Wrong input data: ${e.message}")
-        } catch (e: Exception) {
-            Either.Left("Unexpected error: ${e.message}")
+            async { weatherFetcher.fetchWeather(location.city, dateWithOffset) }
+        } catch (e: RequestFailureException) {
+            return@coroutineScope BotResponse.Error("Failed to fetch weather data: ${e.message}")
         }
 
-        val responseToUser = if (weatherResponse.isLeft()) {
-            weatherResponse.leftOrNull()!!
-        } else {
-            async { geminiClient.generateContent(weatherResponse.getOrNull()!!, dateWithOffset) }.await()
+        val recommendation = try {
+            async { geminiClient.generateContent(weatherResponse.await(), dateWithOffset) }
+        } catch (e: RequestFailureException) {
+            return@coroutineScope BotResponse.Error(e.message!!)
         }
-        return@coroutineScope BotResponse.FullResponse(
-            forecastResponseString(
-                dateWithOffset,
-                location,
-                weatherResponse.getOrNull()!!
-            ), responseToUser
+        val forecast = forecastResponseString(
+            dateWithOffset,
+            location,
+            weatherResponse.await()
         )
+        return@coroutineScope BotResponse.FullResponse(forecast, recommendation.await())
     }
 
     /**
@@ -92,7 +89,12 @@ class CommandHandler(
         log.debug { "Received location=$city, $country" }
         val location = DatabaseManager.locationService.readByCity(city)
         val cityInfo = if (location == null) {
-            async { geocodingFetcher.fetchCoordinates(city, country) }.await()
+            val fetchedInfo = async { geocodingFetcher.fetchCoordinates(city, country) }.await()
+            if (fetchedInfo.isEmpty()) {
+                return@coroutineScope BotResponse.Error("No results found for the city $city. Try to specify the country")
+            }
+            // TODO: suggest to user to choose city if there are multiple results
+            fetchedInfo[0]
         } else {
             CityInfo(
                 location.city,
@@ -100,9 +102,6 @@ class CommandHandler(
                 longitude = location.longitude,
                 country = location.country
             )
-        }
-        if (cityInfo == CityInfo.EMPTY) {
-            return@coroutineScope BotResponse.Error("No results found for the city $city. Try to specify the country")
         }
         log.info { "Checked geolocation of $city: $cityInfo" }
         val previousLocation = async { updateLocation(ctx.user().id, cityInfo) }.await()
